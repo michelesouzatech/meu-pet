@@ -28,7 +28,7 @@ export function usePets(casaId) {
     if (!casaId) return
     supabase
       .from('pets')
-      .select('id, nome, raca, data_nascimento, foto_url')
+      .select('id, nome, raca, data_nascimento, foto_url, sexo, sobre')
       .eq('casa_id', casaId)
       .order('created_at', { ascending: true })
       .then(({ data }) => setPets((data || []).map(mapPet)))
