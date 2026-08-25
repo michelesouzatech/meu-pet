@@ -1,7 +1,7 @@
 import { PawPrint, Syringe, ShowerHead } from 'lucide-react'
-import FoodBowlIcon from '../icons/FoodBowlIcon'
 import { formatAge } from '../utils/petAge'
-import { SUPPLY_LABELS } from '../hooks/useSupplies'
+import { SEX_LABELS } from '../hooks/usePets'
+import { SUPPLY_LABELS, SUPPLY_ICONS, SUPPLY_TONES } from '../hooks/useSupplies'
 import { HEALTH_LABELS } from '../hooks/useHealthRecords'
 import { getSupplyAlerts } from '../utils/supplyStatus'
 import { getHealthAlerts, getNextHealthRecord } from '../utils/healthStatus'
@@ -56,7 +56,7 @@ function AlertCard({ icon: Icon, tone, text, daysLeft, onClick }) {
   )
 }
 
-function healthStatLabel(healthRecords, petId) {
+export function healthStatLabel(healthRecords, petId) {
   const next = getNextHealthRecord(healthRecords, petId)
   if (!next) return 'Sem dados'
   if (next.daysLeft < 0) return 'Atrasada'
@@ -64,7 +64,7 @@ function healthStatLabel(healthRecords, petId) {
   return `${next.daysLeft} ${next.daysLeft === 1 ? 'dia' : 'dias'}`
 }
 
-function bathStatLabel(baths, petId) {
+export function bathStatLabel(baths, petId) {
   const next = getNextBath(baths, petId)
   if (!next) return 'Sem dados'
   if (next.daysLeft < 0) return 'Atrasado'
@@ -72,68 +72,45 @@ function bathStatLabel(baths, petId) {
   return `${next.daysLeft} ${next.daysLeft === 1 ? 'dia' : 'dias'}`
 }
 
-function PetSummaryCard({ pet, healthRecords, baths }) {
+const GRID_TONES = ['1', '2', '3', '4']
+
+function PetGridCard({ pet, index, onSelect }) {
   const initial = (pet.name || '?').charAt(0).toUpperCase()
-  const meta = [pet.breed, formatAge(pet.birthDate)].filter(Boolean).join(' · ')
+  const tone = GRID_TONES[index % GRID_TONES.length]
+  const age = formatAge(pet.birthDate)
+  const sexLabel = SEX_LABELS[pet.sex]
 
   return (
-    <div className="card pet-card">
-      <div className="pet-card-top">
-        <div className={`pet-photo tone-${pet.tone}`}>
-          {pet.photo ? (
-            <img src={pet.photo} alt="" className="pet-photo-img" />
-          ) : (
-            <span className="pet-photo-initial">{initial}</span>
-          )}
-        </div>
-        <span className="status-pill">
-          <PawPrint size={13} strokeWidth={2.5} aria-hidden="true" />
-          Em dia
-        </span>
+    <button type="button" className={`pet-grid-card tone-${tone}`} onClick={() => onSelect(pet.id)}>
+      <div className="pet-grid-photo">
+        {pet.photo ? (
+          <img src={pet.photo} alt="" className="pet-photo-img" />
+        ) : (
+          <span className="pet-photo-initial">{initial}</span>
+        )}
       </div>
-
-      <div className="pet-name">{pet.name}</div>
-      <div className="pet-meta">{meta || 'Sem detalhes ainda'}</div>
-
-      <div className="stat-row">
-        <div className="stat-item">
-          <span className="stat-icon tone-peach">
-            <FoodBowlIcon size={20} strokeWidth={2.2} />
-          </span>
-          <span className="stat-label">Sem dados</span>
+      <div className="pet-grid-name">{pet.name}</div>
+      {(sexLabel || age) && (
+        <div className="pet-grid-tags">
+          {sexLabel && <span className="pet-grid-tag">{sexLabel}</span>}
+          {age && <span className="pet-grid-tag">{age}</span>}
         </div>
-        <div className="stat-item">
-          <span className="stat-icon tone-yellow">
-            <Syringe size={20} strokeWidth={2.2} />
-          </span>
-          <span className="stat-label">{healthStatLabel(healthRecords, pet.id)}</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-icon tone-mint">
-            <ShowerHead size={20} strokeWidth={2.2} />
-          </span>
-          <span className="stat-label">{bathStatLabel(baths, pet.id)}</span>
-        </div>
-      </div>
-    </div>
+      )}
+    </button>
   )
 }
 
-function Dashboard({ pets, activePet, supplies, healthRecords, baths, onAlertClick }) {
-  const visiblePets = activePet === 'casa' ? pets : pets.filter((pet) => pet.id === activePet)
-
+function Dashboard({ pets, supplies, healthRecords, baths, onAlertClick, onSelectPet }) {
   const supplyAlerts = getSupplyAlerts(supplies).map((alert) => ({
     id: `supply-${alert.type}`,
-    icon: FoodBowlIcon,
-    tone: 'peach',
+    icon: SUPPLY_ICONS[alert.type],
+    tone: SUPPLY_TONES[alert.type],
     text: supplyAlertMessage(alert),
     daysLeft: alert.daysLeft,
     section: 'racao',
   }))
 
-  const visibleHealthRecords =
-    activePet === 'casa' ? healthRecords : healthRecords.filter((record) => record.petId === activePet)
-  const healthAlerts = getHealthAlerts(visibleHealthRecords).map((alert) => ({
+  const healthAlerts = getHealthAlerts(healthRecords).map((alert) => ({
     id: `health-${alert.record.id}`,
     icon: Syringe,
     tone: 'yellow',
@@ -142,8 +119,7 @@ function Dashboard({ pets, activePet, supplies, healthRecords, baths, onAlertCli
     section: 'vacinas',
   }))
 
-  const visibleBaths = activePet === 'casa' ? baths : baths.filter((bath) => bath.petId === activePet)
-  const bathAlerts = getBathAlerts(visibleBaths).map((alert) => ({
+  const bathAlerts = getBathAlerts(baths).map((alert) => ({
     id: `bath-${alert.bath.id}`,
     icon: ShowerHead,
     tone: 'mint',
@@ -173,10 +149,10 @@ function Dashboard({ pets, activePet, supplies, healthRecords, baths, onAlertCli
         </div>
       )}
 
-      <div className="section-label">{activePet === 'casa' ? 'Seus pets' : 'Detalhes'}</div>
-      <div className="pet-list">
-        {visiblePets.map((pet) => (
-          <PetSummaryCard key={pet.id} pet={pet} healthRecords={healthRecords} baths={baths} />
+      <div className="section-label">Seus pets</div>
+      <div className="pet-grid">
+        {pets.map((pet, index) => (
+          <PetGridCard key={pet.id} pet={pet} index={index} onSelect={onSelectPet} />
         ))}
       </div>
     </div>

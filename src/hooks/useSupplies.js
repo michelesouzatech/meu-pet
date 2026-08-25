@@ -1,11 +1,23 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import FoodBowlIcon from '../icons/FoodBowlIcon'
+import PoopIcon from '../icons/PoopIcon'
 
 export const SUPPLY_TYPES = ['racao', 'areia']
 
 export const SUPPLY_LABELS = {
   racao: 'Ração',
-  areia: 'Areia',
+  areia: 'Higiene',
+}
+
+export const SUPPLY_ICONS = {
+  racao: FoodBowlIcon,
+  areia: PoopIcon,
+}
+
+export const SUPPLY_TONES = {
+  racao: 'peach',
+  areia: 'lilac',
 }
 
 function mapSupply(row) {

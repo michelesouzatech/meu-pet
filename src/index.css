@@ -417,6 +417,7 @@ button {
 .stat-icon.tone-peach { background: var(--color-accent-soft); color: #c5601e; }
 .stat-icon.tone-yellow { background: var(--tag-yellow); color: #8a6d1f; }
 .stat-icon.tone-mint { background: var(--tag-mint); color: #2f6b48; }
+.stat-icon.tone-lilac { background: var(--tag-lilac); color: #6b4fa0; }
 
 .stat-label {
   font-size: 11px;
@@ -511,6 +512,163 @@ button {
   gap: 14px;
 }
 
+.pet-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.pet-grid-card {
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 12px 24px -14px rgba(43, 35, 32, 0.25);
+  transition: transform 0.12s ease;
+}
+
+.pet-grid-card:active {
+  transform: scale(0.97);
+}
+
+.pet-grid-card.tone-1 { background: var(--tag-yellow); }
+.pet-grid-card.tone-2 { background: var(--tag-mint); }
+.pet-grid-card.tone-3 { background: var(--tag-lilac); }
+.pet-grid-card.tone-4 { background: var(--color-accent-soft); }
+
+.pet-grid-photo {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pet-grid-photo .pet-photo-initial {
+  color: var(--color-text);
+  text-shadow: none;
+}
+
+.pet-grid-name {
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 0 2px;
+}
+
+.pet-grid-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 2px;
+}
+
+.pet-grid-tag {
+  background: rgba(255, 255, 255, 0.65);
+  border-radius: var(--radius-pill);
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.pet-profile {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pet-profile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pet-profile-photo {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.pet-profile-photo.tone-theo {
+  background: linear-gradient(155deg, #ffdab2, #e8a15d);
+}
+
+.pet-profile-photo.tone-chloe {
+  background: linear-gradient(155deg, #e4d9fa, #b7a6e0);
+}
+
+.pet-profile-photo .pet-photo-initial {
+  font-size: 56px;
+}
+
+.pet-profile-name {
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.profile-summary-capsule {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 4px;
+  background: var(--color-card);
+  border-radius: var(--radius-lg);
+  padding: 14px 6px;
+  box-shadow: 0 12px 24px -12px rgba(43, 35, 32, 0.15);
+}
+
+.profile-summary-item {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.profile-summary-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-summary-icon.tone-peach { background: var(--color-accent-soft); color: #c5601e; }
+.profile-summary-icon.tone-yellow { background: var(--tag-yellow); color: #8a6d1f; }
+.profile-summary-icon.tone-mint { background: var(--tag-mint); color: #2f6b48; }
+.profile-summary-icon.tone-lilac { background: var(--tag-lilac); color: #6b4fa0; }
+.profile-summary-icon.tone-coral { background: var(--tag-coral); color: #b3392a; }
+
+.profile-summary-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-soft);
+}
+
+.profile-summary-value {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
 .profile-card {
   align-items: center;
   text-align: center;
@@ -556,9 +714,34 @@ button {
   color: var(--color-text);
 }
 
-.field input:focus-visible {
+.field input:focus-visible,
+.field textarea:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 1px;
+}
+
+.field textarea {
+  min-height: 84px;
+  border-radius: 14px;
+  border: 1.5px solid var(--color-border-soft);
+  background: var(--color-bg);
+  padding: 10px 14px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  color: var(--color-text);
+  resize: vertical;
+}
+
+.profile-about-card {
+  gap: 8px;
+}
+
+.profile-about-text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-soft);
+  font-weight: 600;
+  white-space: pre-wrap;
 }
 
 .field-hint {

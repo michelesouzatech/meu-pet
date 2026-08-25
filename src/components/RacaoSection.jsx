@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import FoodBowlIcon from '../icons/FoodBowlIcon'
-import { SUPPLY_TYPES, SUPPLY_LABELS } from '../hooks/useSupplies'
+import { SUPPLY_TYPES, SUPPLY_LABELS, SUPPLY_ICONS, SUPPLY_TONES } from '../hooks/useSupplies'
 import { getSupplyStatus, diffDays } from '../utils/supplyStatus'
 
 function formatDate(dateStr) {
@@ -25,14 +24,16 @@ function daysLeftLabel(daysLeft) {
 
 function StatusCard({ type, supplies }) {
   const label = SUPPLY_LABELS[type]
+  const Icon = SUPPLY_ICONS[type]
+  const tone = SUPPLY_TONES[type]
   const status = getSupplyStatus(supplies, type)
   const brandLine = status ? [status.current.brand, status.current.subBrand].filter(Boolean).join(' · ') : ''
 
   return (
     <div className="card supply-status-card">
       <div className="supply-status-top">
-        <span className="stat-icon tone-peach">
-          <FoodBowlIcon size={20} strokeWidth={2.2} />
+        <span className={`stat-icon tone-${tone}`}>
+          <Icon size={20} strokeWidth={2.2} />
         </span>
         <div className="supply-status-info">
           <div className="supply-status-name">{label}</div>
@@ -64,11 +65,14 @@ function HistoryItem({ entry, onMarkEnded }) {
     setEditing(false)
   }
 
+  const Icon = SUPPLY_ICONS[entry.type]
+  const tone = SUPPLY_TONES[entry.type]
+
   return (
     <div className="card supply-history-item">
       <div className="supply-history-top">
-        <span className="stat-icon tone-peach">
-          <FoodBowlIcon size={18} strokeWidth={2.2} />
+        <span className={`stat-icon tone-${tone}`}>
+          <Icon size={18} strokeWidth={2.2} />
         </span>
         <div className="supply-history-info">
           <div className="supply-history-title">

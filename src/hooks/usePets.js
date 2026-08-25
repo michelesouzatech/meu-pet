@@ -3,6 +3,11 @@ import { supabase } from '../lib/supabaseClient'
 
 const TONES = ['theo', 'chloe']
 
+export const SEX_LABELS = {
+  femea: 'Fêmea',
+  macho: 'Macho',
+}
+
 function mapPet(row, index) {
   return {
     id: row.id,
@@ -10,6 +15,8 @@ function mapPet(row, index) {
     breed: row.raca || '',
     birthDate: row.data_nascimento || '',
     photo: row.foto_url || null,
+    sex: row.sexo || '',
+    about: row.sobre || '',
     tone: TONES[index % TONES.length],
   }
 }
@@ -31,13 +38,15 @@ export function usePets(casaId) {
     reload()
   }, [reload])
 
-  async function addPet({ name, breed, birthDate, photo }) {
+  async function addPet({ name, breed, birthDate, photo, sex, about }) {
     const { error } = await supabase.from('pets').insert({
       casa_id: casaId,
       nome: name.trim(),
       raca: breed?.trim() || null,
       data_nascimento: birthDate || null,
       foto_url: photo || null,
+      sexo: sex || null,
+      sobre: about?.trim() || null,
     })
     if (error) throw error
     await reload()
@@ -49,6 +58,8 @@ export function usePets(casaId) {
     if ('breed' in updates) payload.raca = updates.breed || null
     if ('birthDate' in updates) payload.data_nascimento = updates.birthDate || null
     if ('photo' in updates) payload.foto_url = updates.photo || null
+    if ('sex' in updates) payload.sexo = updates.sex || null
+    if ('about' in updates) payload.sobre = updates.about?.trim() || null
 
     const { error } = await supabase.from('pets').update(payload).eq('id', id)
     if (error) throw error

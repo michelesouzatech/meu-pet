@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react'
 import { formatAge } from '../utils/petAge'
+import { SEX_LABELS } from '../hooks/usePets'
 import { supabase } from '../lib/supabaseClient'
+
+const SEX_OPTIONS = Object.entries(SEX_LABELS).map(([value, label]) => ({ value, label }))
 
 function PetEditCard({ pet, onSave }) {
   const [name, setName] = useState(pet.name)
   const [breed, setBreed] = useState(pet.breed)
   const [birthDate, setBirthDate] = useState(pet.birthDate)
   const [photo, setPhoto] = useState(pet.photo)
+  const [sex, setSex] = useState(pet.sex || '')
+  const [about, setAbout] = useState(pet.about || '')
   const [saved, setSaved] = useState(false)
   const [erro, setErro] = useState('')
   const [salvando, setSalvando] = useState(false)
@@ -25,7 +30,7 @@ function PetEditCard({ pet, onSave }) {
     setErro('')
     setSalvando(true)
     try {
-      await onSave(pet.id, { name, breed, birthDate, photo })
+      await onSave(pet.id, { name, breed, birthDate, photo, sex, about })
       setSaved(true)
       setTimeout(() => setSaved(false), 1500)
     } catch (err) {
@@ -74,6 +79,34 @@ function PetEditCard({ pet, onSave }) {
           max={new Date().toISOString().slice(0, 10)}
         />
         {ageLabel && <span className="field-hint">≈ {ageLabel}</span>}
+      </label>
+
+      <div className="field">
+        <span className="field-label">Sexo</span>
+        <div className="type-toggle" role="tablist" aria-label="Sexo do pet">
+          {SEX_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              role="tab"
+              aria-selected={sex === option.value}
+              className={`type-toggle-btn ${sex === option.value ? 'active' : ''}`}
+              onClick={() => setSex(sex === option.value ? '' : option.value)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <label className="field">
+        <span className="field-label">Sobre o pet</span>
+        <textarea
+          value={about}
+          onChange={(e) => setAbout(e.target.value)}
+          placeholder="Personalidade, manias, coisas que gosta..."
+          rows={3}
+        />
       </label>
 
       {erro && <p className="auth-error">{erro}</p>}

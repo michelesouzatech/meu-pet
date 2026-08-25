@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Home, Syringe, ShowerHead, User, PawPrint, Search, Bell, ArrowRight, LogOut } from 'lucide-react'
 import FoodBowlIcon from './icons/FoodBowlIcon'
 import Dashboard from './components/Dashboard'
+import PetProfileScreen from './components/PetProfileScreen'
 import PerfilSection from './components/PerfilSection'
 import RacaoSection from './components/RacaoSection'
 import VacinasSection from './components/VacinasSection'
@@ -16,7 +17,7 @@ import { useAuth } from './hooks/useAuth'
 
 const THEME_NAV_ITEMS = [
   { id: 'casa', label: 'Início', Icon: Home },
-  { id: 'racao', label: 'Ração & Areia', Icon: FoodBowlIcon },
+  { id: 'racao', label: 'Ração & Higiene', Icon: FoodBowlIcon },
   { id: 'vacinas', label: 'Vacinas & Saúde', Icon: Syringe },
   { id: 'banhos', label: 'Banhos', Icon: ShowerHead },
   { id: 'perfil', label: 'Perfil', Icon: User },
@@ -74,17 +75,19 @@ function App() {
         </div>
       </header>
 
-      <div className="promo-banner">
-        <div>
-          <h2>
-            Cuidados em dia, <span className="accent">sempre</span>
-          </h2>
-          <p>Ração, vacinas e banhos do Theo e da Chloe num só lugar.</p>
+      {!(activeSection === 'casa' && activePet !== 'casa') && (
+        <div className="promo-banner">
+          <div>
+            <h2>
+              Cuidados em dia, <span className="accent">sempre</span>
+            </h2>
+            <p>Ração, vacinas e banhos do Theo e da Chloe num só lugar.</p>
+          </div>
+          <button className="promo-arrow-btn" aria-label="Ver central de cuidados">
+            <ArrowRight size={20} strokeWidth={2.5} />
+          </button>
         </div>
-        <button className="promo-arrow-btn" aria-label="Ver central de cuidados">
-          <ArrowRight size={20} strokeWidth={2.5} />
-        </button>
-      </div>
+      )}
 
       {activeSection === 'casa' && (
         <div className="pet-switcher" role="tablist" aria-label="Selecionar pet">
@@ -117,14 +120,22 @@ function App() {
         </div>
       )}
 
-      {activeSection === 'casa' && (
+      {activeSection === 'casa' && activePet === 'casa' && (
         <Dashboard
           pets={pets}
-          activePet={activePet}
           supplies={supplies}
           healthRecords={healthRecords}
           baths={baths}
           onAlertClick={setActiveSection}
+          onSelectPet={setActivePet}
+        />
+      )}
+      {activeSection === 'casa' && activePet !== 'casa' && (
+        <PetProfileScreen
+          pet={pets.find((pet) => pet.id === activePet)}
+          healthRecords={healthRecords}
+          baths={baths}
+          onBack={() => setActivePet('casa')}
         />
       )}
       {activeSection === 'perfil' && (
