@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2, Check } from 'lucide-react'
 import { SUPPLY_TYPES, SUPPLY_LABELS, SUPPLY_ICONS, SUPPLY_TONES } from '../hooks/useSupplies'
 import { getSupplyStatus, diffDays } from '../utils/supplyStatus'
 
@@ -261,7 +261,7 @@ function RacaoSection({ supplies, onAddSupply, onMarkEnded, onUpdateSupply, onDe
       setPrice('')
       setPlace('')
       setSaved(true)
-      setTimeout(() => setSaved(false), 1500)
+      setTimeout(() => setSaved(false), 2500)
     } catch (err) {
       setErro(err.message)
     } finally {
@@ -347,9 +347,15 @@ function RacaoSection({ supplies, onAddSupply, onMarkEnded, onUpdateSupply, onDe
         </label>
 
         {erro && <p className="auth-error">{erro}</p>}
+        {saved && (
+          <p className="form-success">
+            <Check size={16} strokeWidth={2.5} aria-hidden="true" />
+            Registrado com sucesso! Confira no histórico abaixo.
+          </p>
+        )}
 
         <button type="submit" className="btn-pill" disabled={salvando}>
-          {salvando ? 'Salvando...' : saved ? 'Registrado!' : 'Registrar compra'}
+          {salvando ? 'Salvando...' : 'Registrar compra'}
         </button>
       </form>
 

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ShowerHead } from 'lucide-react'
+import { ShowerHead, Check } from 'lucide-react'
 import { getPetBaths, getNextBath } from '../utils/bathStatus'
 
 function formatDate(dateStr) {
@@ -88,7 +88,7 @@ function BanhosSection({ pets, baths, onAddBath }) {
       await onAddBath({ petIds: registerPetIds, date, nextDate })
       setNextDate('')
       setSaved(true)
-      setTimeout(() => setSaved(false), 1500)
+      setTimeout(() => setSaved(false), 2500)
     } catch (err) {
       setErro(err.message)
     } finally {
@@ -158,9 +158,15 @@ function BanhosSection({ pets, baths, onAddBath }) {
           <span className="field-hint">Selecione pelo menos um pet</span>
         )}
         {erro && <p className="auth-error">{erro}</p>}
+        {saved && (
+          <p className="form-success">
+            <Check size={16} strokeWidth={2.5} aria-hidden="true" />
+            Registrado com sucesso! Confira no histórico abaixo.
+          </p>
+        )}
 
         <button type="submit" className="btn-pill" disabled={salvando || registerPetIds.length === 0}>
-          {salvando ? 'Salvando...' : saved ? 'Registrado!' : 'Registrar'}
+          {salvando ? 'Salvando...' : 'Registrar'}
         </button>
       </form>
 

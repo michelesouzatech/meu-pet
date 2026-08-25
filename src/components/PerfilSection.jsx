@@ -230,7 +230,7 @@ function ConvidarMoradorCard({ session, perfil }) {
 
   return (
     <div className="card">
-      <span className="section-label">Convidar morador</span>
+      <span className="section-label">Chame o outro tutor para participar do app também</span>
       <p className="field-hint">
         Gere um link e mande por WhatsApp pra pessoa entrar na "{casa.nome}"
       </p>

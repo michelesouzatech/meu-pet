@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Home, Syringe, ShowerHead, User, PawPrint, Search, Bell, ArrowRight, LogOut } from 'lucide-react'
+import { Home, Syringe, ShowerHead, User, PawPrint, Bell, LogOut } from 'lucide-react'
 import FoodBowlIcon from './icons/FoodBowlIcon'
 import Dashboard from './components/Dashboard'
 import PetProfileScreen from './components/PetProfileScreen'
@@ -64,9 +64,6 @@ function App() {
             <h1 className="brand">Meu Pet</h1>
           </div>
           <div className="header-actions">
-            <button className="icon-btn" aria-label="Buscar">
-              <Search size={18} strokeWidth={2.25} />
-            </button>
             <button
               className="icon-btn"
               aria-label="Notificações"
@@ -88,17 +85,14 @@ function App() {
         </div>
       </header>
 
-      {!(activeSection === 'casa' && activePet !== 'casa') && (
+      {activeSection === 'casa' && activePet === 'casa' && (
         <div className="promo-banner">
           <div>
             <h2>
               Cuidados em dia, <span className="accent">sempre</span>
             </h2>
-            <p>Ração, vacinas e banhos do Theo e da Chloe num só lugar.</p>
+            <p>Ração, vacinas e banhos dos seus pets num só lugar.</p>
           </div>
-          <button className="promo-arrow-btn" aria-label="Ver central de cuidados">
-            <ArrowRight size={20} strokeWidth={2.5} />
-          </button>
         </div>
       )}
 

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Syringe, Paperclip, X } from 'lucide-react'
+import { Syringe, Paperclip, X, Check } from 'lucide-react'
 import { HEALTH_TYPES, HEALTH_LABELS } from '../hooks/useHealthRecords'
 import { getPetRecords, getNextHealthRecord } from '../utils/healthStatus'
 import { supabase } from '../lib/supabaseClient'
@@ -53,6 +53,7 @@ function NextRecordCard({ records, petId }) {
 
 function HistoryItem({ entry }) {
   const isConsulta = entry.type === 'consulta'
+  const isFuture = entry.date > new Date().toISOString().slice(0, 10)
   const consultaMeta = [entry.clinic, entry.professional, entry.specialty].filter(Boolean).join(' · ')
 
   return (
@@ -65,7 +66,9 @@ function HistoryItem({ entry }) {
           <div className="supply-history-title">
             {[HEALTH_LABELS[entry.type], entry.description].filter(Boolean).join(' · ')}
           </div>
-          <div className="pet-meta">Realizada em {formatDate(entry.date)}</div>
+          <div className="pet-meta">
+            {isConsulta && isFuture ? 'Agendada para' : 'Realizada em'} {formatDate(entry.date)}
+          </div>
           {isConsulta && consultaMeta && <div className="pet-meta">{consultaMeta}</div>}
           {entry.nextDate && (
             <div className="pet-meta">
@@ -148,7 +151,7 @@ function VacinasSection({ pets, records, onAddRecord }) {
       })
       setForm(EMPTY_FORM)
       setSaved(true)
-      setTimeout(() => setSaved(false), 1500)
+      setTimeout(() => setSaved(false), 2500)
     } catch (err) {
       setErro(err.message)
     } finally {
@@ -208,9 +211,12 @@ function VacinasSection({ pets, records, onAddRecord }) {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            max={new Date().toISOString().slice(0, 10)}
+            max={isConsulta ? undefined : new Date().toISOString().slice(0, 10)}
             required
           />
+          {isConsulta && (
+            <span className="field-hint">Pode ser uma data passada (já realizada) ou futura (agendada)</span>
+          )}
         </label>
 
         {isConsulta && (
@@ -322,9 +328,15 @@ function VacinasSection({ pets, records, onAddRecord }) {
         </label>
 
         {erro && <p className="auth-error">{erro}</p>}
+        {saved && (
+          <p className="form-success">
+            <Check size={16} strokeWidth={2.5} aria-hidden="true" />
+            Registrado com sucesso! Confira no histórico abaixo.
+          </p>
+        )}
 
         <button type="submit" className="btn-pill" disabled={salvando}>
-          {salvando ? 'Salvando...' : saved ? 'Registrado!' : 'Registrar'}
+          {salvando ? 'Salvando...' : 'Registrar'}
         </button>
       </form>
 

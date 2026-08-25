@@ -304,25 +304,6 @@ button {
   color: #d8cfc8;
 }
 
-.promo-arrow-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--color-accent);
-  color: #fff;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  cursor: pointer;
-  transition: transform 0.12s ease;
-}
-
-.promo-arrow-btn:active {
-  transform: scale(0.92);
-}
-
 .card {
   background: var(--color-card);
   border-radius: var(--radius-lg);
@@ -710,7 +691,7 @@ button {
   background: var(--color-bg);
   padding: 0 14px;
   font-family: 'Nunito', sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--color-text);
 }
 
@@ -727,7 +708,7 @@ button {
   background: var(--color-bg);
   padding: 10px 14px;
   font-family: 'Nunito', sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--color-text);
   resize: vertical;
 }
@@ -963,7 +944,7 @@ button {
   background: var(--color-bg);
   padding: 0 12px;
   font-family: 'Nunito', sans-serif;
-  font-size: 13px;
+  font-size: 16px;
   color: var(--color-text);
 }
 
@@ -1032,4 +1013,16 @@ button {
   font-size: 13px;
   font-weight: 700;
   color: var(--color-alert-urgent);
+}
+
+.form-success {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--tag-mint);
+  color: #1f5c3f;
+  font-size: 13px;
+  font-weight: 700;
 }
