@@ -27,7 +27,7 @@ const THEME_NAV_ITEMS = [
 const SECTION_TITLES = {
   racao: 'Alimentação & Higiene',
   vacinas: 'Saúde',
-  banhos: 'Saúde',
+  banhos: 'Asseio',
   perfil: 'Perfil',
 }
 
