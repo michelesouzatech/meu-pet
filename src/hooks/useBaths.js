@@ -25,12 +25,13 @@ export function useBaths() {
     reload()
   }, [reload])
 
-  async function addBath({ petId, date, nextDate }) {
-    const { error } = await supabase.from('banhos').insert({
+  async function addBath({ petIds, date, nextDate }) {
+    const rows = petIds.map((petId) => ({
       pet_id: petId,
       data: date,
       proxima_data: nextDate || null,
-    })
+    }))
+    const { error } = await supabase.from('banhos').insert(rows)
     if (error) throw error
     await reload()
   }

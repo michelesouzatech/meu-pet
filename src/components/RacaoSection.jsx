@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Pencil, Trash2 } from 'lucide-react'
 import { SUPPLY_TYPES, SUPPLY_LABELS, SUPPLY_ICONS, SUPPLY_TONES } from '../hooks/useSupplies'
 import { getSupplyStatus, diffDays } from '../utils/supplyStatus'
 
@@ -54,19 +55,130 @@ function StatusCard({ type, supplies }) {
   )
 }
 
-function HistoryItem({ entry, onMarkEnded }) {
-  const [editing, setEditing] = useState(false)
+function EditSupplyForm({ entry, onSave, onCancel }) {
+  const [type, setType] = useState(entry.type)
+  const [brand, setBrand] = useState(entry.brand)
+  const [subBrand, setSubBrand] = useState(entry.subBrand)
+  const [price, setPrice] = useState(entry.price ?? '')
+  const [place, setPlace] = useState(entry.place)
+  const [purchaseDate, setPurchaseDate] = useState(entry.purchaseDate)
+  const [erro, setErro] = useState('')
+  const [salvando, setSalvando] = useState(false)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setErro('')
+    setSalvando(true)
+    try {
+      await onSave({ type, brand, subBrand, price, place, purchaseDate })
+    } catch (err) {
+      setErro(err.message)
+      setSalvando(false)
+    }
+  }
+
+  return (
+    <form className="supply-form" onSubmit={handleSubmit}>
+      <div className="type-toggle" role="tablist" aria-label="Tipo de compra">
+        {SUPPLY_TYPES.map((supplyType) => (
+          <button
+            key={supplyType}
+            type="button"
+            role="tab"
+            aria-selected={type === supplyType}
+            className={`type-toggle-btn ${type === supplyType ? 'active' : ''}`}
+            onClick={() => setType(supplyType)}
+          >
+            {SUPPLY_LABELS[supplyType]}
+          </button>
+        ))}
+      </div>
+
+      <label className="field">
+        <span className="field-label">Marca</span>
+        <input value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="Ex: Premier" />
+      </label>
+
+      <label className="field">
+        <span className="field-label">Submarca / linha</span>
+        <input value={subBrand} onChange={(e) => setSubBrand(e.target.value)} />
+      </label>
+
+      <label className="field">
+        <span className="field-label">Preço pago (R$)</span>
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          inputMode="decimal"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+        />
+      </label>
+
+      <label className="field">
+        <span className="field-label">Onde comprou</span>
+        <input value={place} onChange={(e) => setPlace(e.target.value)} />
+      </label>
+
+      <label className="field">
+        <span className="field-label">Data da compra</span>
+        <input
+          type="date"
+          value={purchaseDate}
+          onChange={(e) => setPurchaseDate(e.target.value)}
+          max={new Date().toISOString().slice(0, 10)}
+          required
+        />
+      </label>
+
+      {erro && <p className="auth-error">{erro}</p>}
+
+      <div className="supply-end-form">
+        <button type="submit" className="btn-pill btn-pill-small" disabled={salvando}>
+          {salvando ? 'Salvando...' : 'Salvar'}
+        </button>
+        <button type="button" className="btn-text" onClick={onCancel}>
+          Cancelar
+        </button>
+      </div>
+    </form>
+  )
+}
+
+function HistoryItem({ entry, onMarkEnded, onUpdate, onDelete }) {
+  const [endingForm, setEndingForm] = useState(false)
+  const [editMode, setEditMode] = useState(false)
   const [endDate, setEndDate] = useState(new Date().toISOString().slice(0, 10))
   const duration = entry.endDate ? diffDays(entry.purchaseDate, entry.endDate) : null
 
   function confirmEnd(e) {
     e.preventDefault()
     onMarkEnded(entry.id, endDate)
-    setEditing(false)
+    setEndingForm(false)
+  }
+
+  async function handleSaveEdit(updates) {
+    await onUpdate(entry.id, updates)
+    setEditMode(false)
+  }
+
+  function handleDelete() {
+    if (window.confirm('Excluir este registro de compra?')) {
+      onDelete(entry.id)
+    }
   }
 
   const Icon = SUPPLY_ICONS[entry.type]
   const tone = SUPPLY_TONES[entry.type]
+
+  if (editMode) {
+    return (
+      <div className="card supply-history-item">
+        <EditSupplyForm entry={entry} onSave={handleSaveEdit} onCancel={() => setEditMode(false)} />
+      </div>
+    )
+  }
 
   return (
     <div className="card supply-history-item">
@@ -89,10 +201,18 @@ function HistoryItem({ entry, onMarkEnded }) {
             </div>
           )}
         </div>
+        <div className="supply-history-actions">
+          <button type="button" className="icon-btn-plain" aria-label="Editar" onClick={() => setEditMode(true)}>
+            <Pencil size={15} strokeWidth={2.2} />
+          </button>
+          <button type="button" className="icon-btn-plain" aria-label="Excluir" onClick={handleDelete}>
+            <Trash2 size={15} strokeWidth={2.2} />
+          </button>
+        </div>
       </div>
 
       {!entry.endDate && (
-        editing ? (
+        endingForm ? (
           <form className="supply-end-form" onSubmit={confirmEnd}>
             <input
               type="date"
@@ -104,12 +224,12 @@ function HistoryItem({ entry, onMarkEnded }) {
             <button type="submit" className="btn-pill btn-pill-small">
               Confirmar
             </button>
-            <button type="button" className="btn-text" onClick={() => setEditing(false)}>
+            <button type="button" className="btn-text" onClick={() => setEndingForm(false)}>
               Cancelar
             </button>
           </form>
         ) : (
-          <button type="button" className="btn-text" onClick={() => setEditing(true)}>
+          <button type="button" className="btn-text" onClick={() => setEndingForm(true)}>
             Marcar que acabou
           </button>
         )
@@ -118,7 +238,7 @@ function HistoryItem({ entry, onMarkEnded }) {
   )
 }
 
-function RacaoSection({ supplies, onAddSupply, onMarkEnded }) {
+function RacaoSection({ supplies, onAddSupply, onMarkEnded, onUpdateSupply, onDeleteSupply }) {
   const [type, setType] = useState('racao')
   const [brand, setBrand] = useState('')
   const [subBrand, setSubBrand] = useState('')
@@ -241,7 +361,13 @@ function RacaoSection({ supplies, onAddSupply, onMarkEnded }) {
       ) : (
         <div className="pet-list">
           {supplies.map((entry) => (
-            <HistoryItem key={entry.id} entry={entry} onMarkEnded={onMarkEnded} />
+            <HistoryItem
+              key={entry.id}
+              entry={entry}
+              onMarkEnded={onMarkEnded}
+              onUpdate={onUpdateSupply}
+              onDelete={onDeleteSupply}
+            />
           ))}
         </div>
       )}

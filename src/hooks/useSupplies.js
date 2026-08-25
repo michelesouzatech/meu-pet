@@ -73,5 +73,27 @@ export function useSupplies(casaId) {
     await reload()
   }
 
-  return { supplies, addSupply, markSupplyEnded }
+  async function updateSupply(id, { type, brand, subBrand, price, place, purchaseDate }) {
+    const { error } = await supabase
+      .from('compras_racao_areia')
+      .update({
+        tipo: type,
+        marca: brand?.trim() || null,
+        sub_marca: subBrand?.trim() || null,
+        preco: price === '' || price == null ? null : Number(price),
+        local_compra: place?.trim() || null,
+        data_compra: purchaseDate,
+      })
+      .eq('id', id)
+    if (error) throw error
+    await reload()
+  }
+
+  async function deleteSupply(id) {
+    const { error } = await supabase.from('compras_racao_areia').delete().eq('id', id)
+    if (error) throw error
+    await reload()
+  }
+
+  return { supplies, addSupply, markSupplyEnded, updateSupply, deleteSupply }
 }

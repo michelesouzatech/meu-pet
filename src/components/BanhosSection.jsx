@@ -63,6 +63,7 @@ function HistoryItem({ entry }) {
 
 function BanhosSection({ pets, baths, onAddBath }) {
   const [selectedPetId, setSelectedPetId] = useState(pets[0]?.id)
+  const [registerPetIds, setRegisterPetIds] = useState(pets.map((pet) => pet.id))
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
   const [nextDate, setNextDate] = useState('')
   const [saved, setSaved] = useState(false)
@@ -72,13 +73,19 @@ function BanhosSection({ pets, baths, onAddBath }) {
   const selectedPet = pets.find((pet) => pet.id === selectedPetId)
   const petBaths = getPetBaths(baths, selectedPetId)
 
+  function toggleRegisterPet(petId) {
+    setRegisterPetIds((current) =>
+      current.includes(petId) ? current.filter((id) => id !== petId) : [...current, petId]
+    )
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!selectedPetId || !date) return
+    if (registerPetIds.length === 0 || !date) return
     setErro('')
     setSalvando(true)
     try {
-      await onAddBath({ petId: selectedPetId, date, nextDate })
+      await onAddBath({ petIds: registerPetIds, date, nextDate })
       setNextDate('')
       setSaved(true)
       setTimeout(() => setSaved(false), 1500)
@@ -111,6 +118,26 @@ function BanhosSection({ pets, baths, onAddBath }) {
 
       <div className="section-label">Registrar banho</div>
       <form className="card supply-form" onSubmit={handleSubmit}>
+        <div className="field">
+          <span className="field-label">Quem tomou banho</span>
+          <div className="pet-multiselect" role="group" aria-label="Selecionar pets">
+            {pets.map((pet) => {
+              const checked = registerPetIds.includes(pet.id)
+              return (
+                <button
+                  key={pet.id}
+                  type="button"
+                  aria-pressed={checked}
+                  className={`pet-multiselect-chip ${checked ? 'active' : ''}`}
+                  onClick={() => toggleRegisterPet(pet.id)}
+                >
+                  {pet.name}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
         <label className="field">
           <span className="field-label">Data do banho</span>
           <input
@@ -127,9 +154,12 @@ function BanhosSection({ pets, baths, onAddBath }) {
           <input type="date" value={nextDate} onChange={(e) => setNextDate(e.target.value)} min={date} />
         </label>
 
+        {registerPetIds.length === 0 && (
+          <span className="field-hint">Selecione pelo menos um pet</span>
+        )}
         {erro && <p className="auth-error">{erro}</p>}
 
-        <button type="submit" className="btn-pill" disabled={salvando}>
+        <button type="submit" className="btn-pill" disabled={salvando || registerPetIds.length === 0}>
           {salvando ? 'Salvando...' : saved ? 'Registrado!' : 'Registrar'}
         </button>
       </form>

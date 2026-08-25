@@ -29,7 +29,7 @@ function App() {
   const [activePet, setActivePet] = useState('casa')
   const casaId = perfil?.casa_id
   const { pets, addPet, updatePet } = usePets(casaId)
-  const { supplies, addSupply, markSupplyEnded } = useSupplies(casaId)
+  const { supplies, addSupply, markSupplyEnded, updateSupply, deleteSupply } = useSupplies(casaId)
   const { records: healthRecords, addRecord: addHealthRecord } = useHealthRecords(casaId)
   const { baths, addBath } = useBaths()
 
@@ -148,7 +148,13 @@ function App() {
         />
       )}
       {activeSection === 'racao' && (
-        <RacaoSection supplies={supplies} onAddSupply={addSupply} onMarkEnded={markSupplyEnded} />
+        <RacaoSection
+          supplies={supplies}
+          onAddSupply={addSupply}
+          onMarkEnded={markSupplyEnded}
+          onUpdateSupply={updateSupply}
+          onDeleteSupply={deleteSupply}
+        />
       )}
       {activeSection === 'vacinas' && (
         <VacinasSection pets={pets} records={healthRecords} onAddRecord={addHealthRecord} />
