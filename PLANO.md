@@ -20,17 +20,17 @@
 
 | Tela | O que você faz nela |
 |---|---|
-| **Dashboard (Visão Geral)** | Abre o app e já vê os alertas e próximos cuidados — alterna entre "Casa" (visão geral), Theo e Chloe |
-| **Perfil do Pet** | Foto, nome, raça, idade de cada gato |
-| **Ração & Areia** | Registra compras (marca, submarca, preço, local de compra) e quando cada uma acaba de verdade — com esse histórico, o app aprende sozinho quanto tempo costuma durar e avisa quando está acabando |
+| **Casa (tela de entrada)** | Abre o app e já vê os alertas, e os pets lado a lado numa grade compacta (foto, nome, sexo, idade). Clicar num pet — pelo card da grade ou pelo botão dele no seletor do topo — leva pro perfil completo |
+| **Perfil do Pet** | Foto grande, nome, e um resumo em cápsula com sexo, raça, idade, status da próxima vacina e do próximo banho, além de um campo livre "Sobre o pet" |
+| **Ração & Higiene** | Registra compras (marca, submarca, preço, local de compra) e quando cada uma acaba de verdade — com esse histórico, o app aprende sozinho quanto tempo costuma durar e avisa quando está acabando. Dá pra editar ou excluir qualquer item cadastrado errado |
 | **Vacinas & Saúde** | Histórico de vacinas e consultas veterinárias, próximas doses/consultas, alerta quando estiver chegando a data |
-| **Banhos** | Histórico de banhos e alerta de quando o próximo está previsto |
+| **Banhos** | Histórico de banhos e alerta de quando o próximo está previsto; como Theo e Chloe tomam banho juntos, dá pra selecionar os dois de uma vez ao registrar |
 
 ## 3. O diferencial (detalhado)
 
 **Centralizar o histórico e os próximos cuidados de cada pet, transformando essas informações em alertas e lembretes acionáveis.**
 
-O Dashboard é o coração do app: ele junta o que está registrado em Ração & Areia, Vacinas & Saúde e Banhos, e monta uma **lista de alertas ordenada por urgência** — por exemplo:
+O Dashboard é o coração do app: ele junta o que está registrado em Ração & Higiene, Vacinas & Saúde e Banhos, e monta uma **lista de alertas ordenada por urgência** — por exemplo:
 - 🔴 "Ração do Theo acaba em 2 dias"
 - 🟡 "Vacina da Chloe prevista para daqui 1 semana"
 - 🟢 "Banho do Theo previsto para o fim de semana"
@@ -40,12 +40,14 @@ Cada alerta é clicável e leva direto para a tela/registro relacionado. A pesso
 ## 4. O que o app guarda
 
 ```
-Pet: nome, raça, data de nascimento (ou idade aproximada), foto
+Pet: nome, raça, data de nascimento (ou idade aproximada), foto,
+  sexo (fêmea/macho), texto livre "sobre o pet"
 
-Compra de Ração/Areia: tipo (ração ou areia), marca, submarca/linha,
+Compra de Ração/Higiene: tipo (ração ou higiene), marca, submarca/linha,
   preço pago, local da compra, data da compra, data em que acabou
   (preenchida depois, quando acaba de verdade)
-  (compartilhada entre os pets da casa)
+  (compartilhada entre os pets da casa; qualquer item pode ser
+  editado ou excluído depois de cadastrado)
 
   A duração e a data prevista para acabar não são digitadas — o app
   calcula sozinho, com base na média das durações reais já registradas
@@ -61,9 +63,11 @@ Consulta veterinária: pet, motivo/descrição, data da consulta,
   opcional)
 
 Banho: pet, data do banho, próxima data prevista
+  (o registro pode ser feito pra vários pets de uma vez, quando
+  tomam banho juntos — vira um registro por pet)
 ```
 
-Cada registro de Vacina/Consulta e de Banho pertence a um pet específico (Theo ou Chloe). A Compra de Ração/Areia é da casa (compartilhada entre os dois).
+Cada registro de Vacina/Consulta e de Banho pertence a um pet específico (Theo ou Chloe), mesmo quando cadastrado para os dois ao mesmo tempo (caso do banho). A Compra de Ração/Higiene é da casa (compartilhada entre os dois).
 
 ## 5. Fases de construção
 
@@ -74,7 +78,8 @@ Cada registro de Vacina/Consulta e de Banho pertence a um pet específico (Theo 
 | [x] **2. Ração & Areia** | Registrar compras, calcular duração, alertas de "está acabando" no Dashboard | Aula 2 / dever de casa |
 | [x] **3. Vacinas & Saúde** | Histórico de vacinas (nome, data, próxima dose) e consultas (clínica, profissional, especialidade, retorno, anexo da receita), alertas no Dashboard | Dever de casa |
 | [x] **4. Banhos** | Histórico de banhos, próxima data prevista, alertas no Dashboard | Dever de casa |
-| [~] **Final. Publicar** | Supabase — banco de dados organizado por "casa" (cada casa com seus próprios pets e dados, sem uma casa ver a outra), contas separadas para você e o Thiago com acesso compartilhado à mesma casa, sistema de convite por link para adicionar morador a uma casa ✅ pronto e testado — falta: deploy na Vercel + instalar como PWA no celular | Aula 3 |
+| [x] **Final. Publicar** | Supabase — banco de dados organizado por "casa" (cada casa com seus próprios pets e dados, sem uma casa ver a outra), contas separadas para você e o Thiago com acesso compartilhado à mesma casa, sistema de convite por link para adicionar morador a uma casa. Deploy no ar na Vercel, com favicon e ícone de "adicionar à tela inicial" do celular (a patinha) | Aula 3 |
+| [x] **5. Refinamentos de interface** | Tela "Casa" como entrada padrão, com os pets lado a lado em cards compactos e perfil completo por pet (foto, sexo, raça, idade, status de vacina/banho, campo "sobre o pet"); "Areia" renomeada para "Higiene" com ícone próprio; edição e exclusão de compras cadastradas; registro de banho para vários pets de uma vez | Pós-lançamento |
 
 ## 6. Versão 2 (fica pra depois)
 
