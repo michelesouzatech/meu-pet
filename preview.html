@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Meu Pet — Preview (celular + computador)</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #ece3dc;
+        font-family: 'Segoe UI', sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+        padding: 32px 16px 60px;
+      }
+      h1 {
+        font-size: 18px;
+        color: #2b2320;
+        margin: 0;
+      }
+      .frames {
+        display: flex;
+        gap: 40px;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .frame-block {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+      .frame-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #7a6f68;
+      }
+
+      /* Moldura de celular */
+      .phone {
+        position: relative;
+        width: 390px;
+        height: 780px;
+        background: #1e1b18;
+        border-radius: 44px;
+        box-shadow: 0 20px 40px -16px rgba(0, 0, 0, 0.35);
+        overflow: hidden;
+      }
+      .phone-notch {
+        position: absolute;
+        top: 14px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 120px;
+        height: 22px;
+        background: #1e1b18;
+        border-radius: 0 0 16px 16px;
+        z-index: 2;
+      }
+      .phone iframe {
+        position: absolute;
+        top: 14px;
+        left: 14px;
+        right: 14px;
+        bottom: 14px;
+        width: calc(100% - 28px);
+        height: calc(100% - 28px);
+        border: none;
+        border-radius: 28px;
+        background: #fff;
+      }
+
+      /* Moldura de computador */
+      .desktop {
+        width: 900px;
+        max-width: 80vw;
+        height: 780px;
+        background: #1e1b18;
+        border-radius: 10px;
+        padding: 10px 10px 26px;
+        box-shadow: 0 20px 40px -16px rgba(0, 0, 0, 0.35);
+      }
+      .desktop iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+        border-radius: 4px;
+        background: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Meu Pet — preview ao vivo (celular + computador)</h1>
+    <div class="frames">
+      <div class="frame-block">
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <iframe src="http://localhost:5173" title="Meu Pet - celular"></iframe>
+        </div>
+        <span class="frame-label">📱 Celular</span>
+      </div>
+      <div class="frame-block">
+        <div class="desktop">
+          <iframe src="http://localhost:5173" title="Meu Pet - computador"></iframe>
+        </div>
+        <span class="frame-label">💻 Computador</span>
+      </div>
+    </div>
+  </body>
+</html>
