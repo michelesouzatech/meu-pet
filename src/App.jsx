@@ -14,6 +14,7 @@ import { useSupplies } from './hooks/useSupplies'
 import { useHealthRecords } from './hooks/useHealthRecords'
 import { useBaths } from './hooks/useBaths'
 import { useAuth } from './hooks/useAuth'
+import { usePushNotifications } from './hooks/usePushNotifications'
 
 const THEME_NAV_ITEMS = [
   { id: 'casa', label: 'Início', Icon: Home },
@@ -32,6 +33,7 @@ function App() {
   const { supplies, addSupply, markSupplyEnded, updateSupply, deleteSupply } = useSupplies(casaId)
   const { records: healthRecords, addRecord: addHealthRecord } = useHealthRecords(casaId)
   const { baths, addBath } = useBaths()
+  const { permission, requestPermission } = usePushNotifications(session?.user?.id)
 
   if (loading) {
     return <div className="app" />
@@ -65,8 +67,19 @@ function App() {
             <button className="icon-btn" aria-label="Buscar">
               <Search size={18} strokeWidth={2.25} />
             </button>
-            <button className="icon-btn" aria-label="Notificações">
-              <Bell size={18} strokeWidth={2.25} />
+            <button
+              className="icon-btn"
+              aria-label="Notificações"
+              onClick={requestPermission}
+              title={
+                permission === 'granted'
+                  ? 'Notificações ativadas'
+                  : permission === 'denied'
+                    ? 'Notificações bloqueadas no navegador'
+                    : 'Ativar notificações'
+              }
+            >
+              <Bell size={18} strokeWidth={2.25} fill={permission === 'granted' ? 'currentColor' : 'none'} />
             </button>
             <button className="icon-btn" aria-label="Sair" onClick={signOut}>
               <LogOut size={18} strokeWidth={2.25} />
