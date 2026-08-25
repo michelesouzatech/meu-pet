@@ -254,14 +254,14 @@ function ConvidarMoradorCard({ session, perfil }) {
 function PerfilSection({ pets, onSave, onAddPet, session, perfil }) {
   return (
     <div className="perfil-section">
-      <ConvidarMoradorCard session={session} perfil={perfil} />
-
       {pets.length > 0 && <div className="section-label">Perfis dos pets</div>}
       {pets.map((pet) => (
         <PetEditCard key={pet.id} pet={pet} onSave={onSave} />
       ))}
 
       <AddPetCard onAdd={onAddPet} />
+
+      <ConvidarMoradorCard session={session} perfil={perfil} />
     </div>
   )
 }

@@ -252,6 +252,12 @@ button {
   color: var(--color-text);
 }
 
+.screen-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
 .header-actions {
   display: flex;
   gap: 8px;

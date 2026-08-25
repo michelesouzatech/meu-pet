@@ -24,6 +24,13 @@ const THEME_NAV_ITEMS = [
   { id: 'perfil', label: 'Perfil', Icon: User },
 ]
 
+const SECTION_TITLES = {
+  racao: 'Alimentação & Higiene',
+  vacinas: 'Saúde',
+  banhos: 'Saúde',
+  perfil: 'Perfil',
+}
+
 function App() {
   const { session, perfil, loading, signIn, signUp, signOut, entrarNaCasa } = useAuth()
   const [activeSection, setActiveSection] = useState('casa')
@@ -32,7 +39,7 @@ function App() {
   const { pets, addPet, updatePet } = usePets(casaId)
   const { supplies, addSupply, markSupplyEnded, updateSupply, deleteSupply } = useSupplies(casaId)
   const { records: healthRecords, addRecord: addHealthRecord } = useHealthRecords(casaId)
-  const { baths, addBath } = useBaths()
+  const { baths, addBath, updateBathGroup } = useBaths()
   const { permission, requestPermission } = usePushNotifications(session?.user?.id)
 
   if (loading) {
@@ -127,6 +134,10 @@ function App() {
         </div>
       )}
 
+      {SECTION_TITLES[activeSection] && (
+        <h2 className="screen-title">{SECTION_TITLES[activeSection]}</h2>
+      )}
+
       {activeSection === 'casa' && activePet === 'casa' && (
         <Dashboard
           pets={pets}
@@ -167,7 +178,7 @@ function App() {
         <VacinasSection pets={pets} records={healthRecords} onAddRecord={addHealthRecord} />
       )}
       {activeSection === 'banhos' && (
-        <BanhosSection pets={pets} baths={baths} onAddBath={addBath} />
+        <BanhosSection pets={pets} baths={baths} onAddBath={addBath} onUpdateBath={updateBathGroup} />
       )}
 
       <nav className="bottom-nav" aria-label="Navegação principal">

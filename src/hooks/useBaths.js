@@ -36,5 +36,37 @@ export function useBaths() {
     await reload()
   }
 
-  return { baths, addBath }
+  async function updateBathGroup(entries, { petIds, date, nextDate }) {
+    const originalPetIds = entries.map((entry) => entry.petId)
+    const toDelete = entries.filter((entry) => !petIds.includes(entry.petId))
+    const toUpdate = entries.filter((entry) => petIds.includes(entry.petId))
+    const toInsertPetIds = petIds.filter((petId) => !originalPetIds.includes(petId))
+
+    if (toDelete.length > 0) {
+      const { error } = await supabase
+        .from('banhos')
+        .delete()
+        .in('id', toDelete.map((entry) => entry.id))
+      if (error) throw error
+    }
+    if (toUpdate.length > 0) {
+      const { error } = await supabase
+        .from('banhos')
+        .update({ data: date, proxima_data: nextDate || null })
+        .in('id', toUpdate.map((entry) => entry.id))
+      if (error) throw error
+    }
+    if (toInsertPetIds.length > 0) {
+      const rows = toInsertPetIds.map((petId) => ({
+        pet_id: petId,
+        data: date,
+        proxima_data: nextDate || null,
+      }))
+      const { error } = await supabase.from('banhos').insert(rows)
+      if (error) throw error
+    }
+    await reload()
+  }
+
+  return { baths, addBath, updateBathGroup }
 }

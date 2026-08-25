@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { ShowerHead, Check } from 'lucide-react'
-import { getPetBaths, getNextBath } from '../utils/bathStatus'
+import { ShowerHead, Check, Pencil } from 'lucide-react'
+import { getNextBathOverall, groupBathsByDate } from '../utils/bathStatus'
 
 function formatDate(dateStr) {
   if (!dateStr) return ''
@@ -17,8 +17,21 @@ function daysLeftLabel(daysLeft) {
   return `Em ${daysLeft} ${daysLeft === 1 ? 'dia' : 'dias'}`
 }
 
-function NextBathCard({ baths, petId }) {
-  const next = getNextBath(baths, petId)
+function petNamesFor(petIds, pets) {
+  return petIds
+    .map((petId) => pets.find((pet) => pet.id === petId)?.name)
+    .filter(Boolean)
+    .join(' e ')
+}
+
+function NextBathCard({ baths, pets }) {
+  const next = getNextBathOverall(baths)
+  const names = next
+    ? petNamesFor(
+        baths.filter((bath) => bath.nextDate === next.bath.nextDate).map((bath) => bath.petId),
+        pets
+      )
+    : ''
 
   return (
     <div className="card supply-status-card">
@@ -29,7 +42,9 @@ function NextBathCard({ baths, petId }) {
         <div className="supply-status-info">
           <div className="supply-status-name">Próximo banho</div>
           <div className="pet-meta">
-            {next ? `Previsto para ${formatDate(next.bath.nextDate)}` : 'Nada agendado ainda'}
+            {next
+              ? `Previsto para ${formatDate(next.bath.nextDate)}${names ? ` · ${names}` : ''}`
+              : 'Nada agendado ainda'}
           </div>
         </div>
       </div>
@@ -42,7 +57,108 @@ function NextBathCard({ baths, petId }) {
   )
 }
 
-function HistoryItem({ entry }) {
+function PetMultiselect({ pets, petIds, onToggle }) {
+  return (
+    <div className="pet-multiselect" role="group" aria-label="Selecionar pets">
+      {pets.map((pet) => {
+        const checked = petIds.includes(pet.id)
+        return (
+          <button
+            key={pet.id}
+            type="button"
+            aria-pressed={checked}
+            className={`pet-multiselect-chip ${checked ? 'active' : ''}`}
+            onClick={() => onToggle(pet.id)}
+          >
+            {pet.name}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function EditBathForm({ group, pets, onSave, onCancel }) {
+  const [petIds, setPetIds] = useState(group.entries.map((entry) => entry.petId))
+  const [date, setDate] = useState(group.date)
+  const [nextDate, setNextDate] = useState(group.nextDate || '')
+  const [erro, setErro] = useState('')
+  const [salvando, setSalvando] = useState(false)
+
+  function togglePet(petId) {
+    setPetIds((current) =>
+      current.includes(petId) ? current.filter((id) => id !== petId) : [...current, petId]
+    )
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (petIds.length === 0 || !date) return
+    setErro('')
+    setSalvando(true)
+    try {
+      await onSave({ petIds, date, nextDate })
+    } catch (err) {
+      setErro(err.message)
+      setSalvando(false)
+    }
+  }
+
+  return (
+    <form className="supply-form" onSubmit={handleSubmit}>
+      <div className="field">
+        <span className="field-label">Quem tomou banho</span>
+        <PetMultiselect pets={pets} petIds={petIds} onToggle={togglePet} />
+      </div>
+
+      <label className="field">
+        <span className="field-label">Data do banho</span>
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          max={new Date().toISOString().slice(0, 10)}
+          required
+        />
+      </label>
+
+      <label className="field">
+        <span className="field-label">Próximo banho previsto</span>
+        <input type="date" value={nextDate} onChange={(e) => setNextDate(e.target.value)} min={date} />
+      </label>
+
+      {petIds.length === 0 && <span className="field-hint">Selecione pelo menos um pet</span>}
+      {erro && <p className="auth-error">{erro}</p>}
+
+      <div className="supply-end-form">
+        <button type="submit" className="btn-pill btn-pill-small" disabled={salvando || petIds.length === 0}>
+          {salvando ? 'Salvando...' : 'Salvar'}
+        </button>
+        <button type="button" className="btn-text" onClick={onCancel}>
+          Cancelar
+        </button>
+      </div>
+    </form>
+  )
+}
+
+function HistoryItem({ group, pets, onUpdate }) {
+  const [editMode, setEditMode] = useState(false)
+  const names = petNamesFor(group.entries.map((entry) => entry.petId), pets)
+
+  async function handleSaveEdit(updates) {
+    await onUpdate(group.entries, updates)
+    setEditMode(false)
+  }
+
+  if (editMode) {
+    return (
+      <div className="card supply-history-item">
+        <EditBathForm group={group} pets={pets} onSave={handleSaveEdit} onCancel={() => setEditMode(false)} />
+      </div>
+    )
+  }
+
   return (
     <div className="card supply-history-item">
       <div className="supply-history-top">
@@ -50,19 +166,28 @@ function HistoryItem({ entry }) {
           <ShowerHead size={18} strokeWidth={2.2} />
         </span>
         <div className="supply-history-info">
-          <div className="supply-history-title">Banho</div>
-          <div className="pet-meta">Feito em {formatDate(entry.date)}</div>
-          {entry.nextDate && (
-            <div className="pet-meta">Próximo previsto em {formatDate(entry.nextDate)}</div>
+          <div className="supply-history-title">Banho{names ? ` · ${names}` : ''}</div>
+          <div className="pet-meta">Feito em {formatDate(group.date)}</div>
+          {group.nextDate && (
+            <div className="pet-meta">Próximo previsto em {formatDate(group.nextDate)}</div>
           )}
+        </div>
+        <div className="supply-history-actions">
+          <button
+            type="button"
+            className="icon-btn-plain"
+            aria-label="Editar"
+            onClick={() => setEditMode(true)}
+          >
+            <Pencil size={15} strokeWidth={2.2} />
+          </button>
         </div>
       </div>
     </div>
   )
 }
 
-function BanhosSection({ pets, baths, onAddBath }) {
-  const [selectedPetId, setSelectedPetId] = useState(pets[0]?.id)
+function BanhosSection({ pets, baths, onAddBath, onUpdateBath }) {
   const [registerPetIds, setRegisterPetIds] = useState(pets.map((pet) => pet.id))
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
   const [nextDate, setNextDate] = useState('')
@@ -70,8 +195,7 @@ function BanhosSection({ pets, baths, onAddBath }) {
   const [erro, setErro] = useState('')
   const [salvando, setSalvando] = useState(false)
 
-  const selectedPet = pets.find((pet) => pet.id === selectedPetId)
-  const petBaths = getPetBaths(baths, selectedPetId)
+  const groups = groupBathsByDate(baths)
 
   function toggleRegisterPet(petId) {
     setRegisterPetIds((current) =>
@@ -98,44 +222,13 @@ function BanhosSection({ pets, baths, onAddBath }) {
 
   return (
     <div className="racao-section">
-      <div className="section-label">Pet</div>
-      <div className="type-toggle" role="tablist" aria-label="Selecionar pet">
-        {pets.map((pet) => (
-          <button
-            key={pet.id}
-            type="button"
-            role="tab"
-            aria-selected={selectedPetId === pet.id}
-            className={`type-toggle-btn ${selectedPetId === pet.id ? 'active' : ''}`}
-            onClick={() => setSelectedPetId(pet.id)}
-          >
-            {pet.name}
-          </button>
-        ))}
-      </div>
-
-      <NextBathCard baths={baths} petId={selectedPetId} />
+      <NextBathCard baths={baths} pets={pets} />
 
       <div className="section-label">Registrar banho</div>
       <form className="card supply-form" onSubmit={handleSubmit}>
         <div className="field">
           <span className="field-label">Quem tomou banho</span>
-          <div className="pet-multiselect" role="group" aria-label="Selecionar pets">
-            {pets.map((pet) => {
-              const checked = registerPetIds.includes(pet.id)
-              return (
-                <button
-                  key={pet.id}
-                  type="button"
-                  aria-pressed={checked}
-                  className={`pet-multiselect-chip ${checked ? 'active' : ''}`}
-                  onClick={() => toggleRegisterPet(pet.id)}
-                >
-                  {pet.name}
-                </button>
-              )
-            })}
-          </div>
+          <PetMultiselect pets={pets} petIds={registerPetIds} onToggle={toggleRegisterPet} />
         </div>
 
         <label className="field">
@@ -171,14 +264,14 @@ function BanhosSection({ pets, baths, onAddBath }) {
       </form>
 
       <div className="section-label">Histórico</div>
-      {petBaths.length === 0 ? (
+      {groups.length === 0 ? (
         <div className="card coming-soon">
-          <p>Nenhum banho registrado ainda para {selectedPet?.name || 'esse pet'}.</p>
+          <p>Nenhum banho registrado ainda.</p>
         </div>
       ) : (
         <div className="pet-list">
-          {petBaths.map((entry) => (
-            <HistoryItem key={entry.id} entry={entry} />
+          {groups.map((group) => (
+            <HistoryItem key={group.date} group={group} pets={pets} onUpdate={onUpdateBath} />
           ))}
         </div>
       )}
