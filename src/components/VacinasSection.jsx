@@ -1,28 +1,17 @@
 import { useState } from 'react'
-import { Syringe, Paperclip, X, Check } from 'lucide-react'
-import { HEALTH_TYPES, HEALTH_LABELS } from '../hooks/useHealthRecords'
-import { getPetRecords, getNextHealthRecord } from '../utils/healthStatus'
+import { Syringe, Paperclip, X, Check, ChevronDown, ChevronUp, ShieldCheck } from 'lucide-react'
+import { HEALTH_LABELS } from '../hooks/useHealthRecords'
+import { getPetRecords, getNextHealthRecord, formatHealthDate, healthDaysLeftLabel } from '../utils/healthStatus'
 import { supabase } from '../lib/supabaseClient'
+import ActionMenu from './ActionMenu'
 
 async function abrirAnexo(path) {
   const { data, error } = await supabase.storage.from('anexos').createSignedUrl(path, 300)
   if (!error && data) window.open(data.signedUrl, '_blank', 'noopener')
 }
 
-function formatDate(dateStr) {
-  if (!dateStr) return ''
-  const [year, month, day] = dateStr.split('-')
-  return `${day}/${month}/${year}`
-}
-
-function daysLeftLabel(daysLeft) {
-  if (daysLeft < 0) {
-    const days = Math.abs(daysLeft)
-    return `Atrasada há ${days} ${days === 1 ? 'dia' : 'dias'}`
-  }
-  if (daysLeft === 0) return 'Hoje'
-  return `Em ${daysLeft} ${daysLeft === 1 ? 'dia' : 'dias'}`
-}
+const formatDate = formatHealthDate
+const daysLeftLabel = healthDaysLeftLabel
 
 function NextRecordCard({ records, petId }) {
   const next = getNextHealthRecord(records, petId)
@@ -51,10 +40,369 @@ function NextRecordCard({ records, petId }) {
   )
 }
 
-function HistoryItem({ entry }) {
+const TODAY = () => new Date().toISOString().slice(0, 10)
+
+function VacinaForm({ petId, initialEntry, submitLabel, onSubmit, onCancel }) {
+  const [description, setDescription] = useState(initialEntry?.description || '')
+  const [date, setDate] = useState(initialEntry?.date || TODAY())
+  const [nextDate, setNextDate] = useState(initialEntry?.nextDate || '')
+  const [repetirDose, setRepetirDose] = useState(initialEntry?.repetirDose !== false)
+  const [notes, setNotes] = useState(initialEntry?.notes || '')
+  const [saved, setSaved] = useState(false)
+  const [erro, setErro] = useState('')
+  const [salvando, setSalvando] = useState(false)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!petId || !date) return
+    setErro('')
+    setSalvando(true)
+    try {
+      await onSubmit({
+        description,
+        date,
+        nextDate,
+        repetirDose,
+        notes,
+        clinic: '',
+        professional: '',
+        specialty: '',
+        attachment: null,
+        attachmentChanged: false,
+      })
+      if (!initialEntry) {
+        setDescription('')
+        setNextDate('')
+        setNotes('')
+      }
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2500)
+    } catch (err) {
+      setErro(err.message)
+    } finally {
+      setSalvando(false)
+    }
+  }
+
+  return (
+    <form className="card supply-form" onSubmit={handleSubmit}>
+      <label className="field">
+        <span className="field-label">Nome da vacina</span>
+        <input
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Ex: V4, Raiva..."
+        />
+      </label>
+
+      <label className="field">
+        <span className="field-label">Data realizada</span>
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          max={TODAY()}
+          required
+        />
+      </label>
+
+      <label className="field">
+        <span className="field-label">Próxima dose prevista</span>
+        <input
+          type="date"
+          value={nextDate}
+          onChange={(e) => setNextDate(e.target.value)}
+          min={date}
+        />
+      </label>
+
+      <div className="field">
+        <span className="field-label">Necessário repetir dose?</span>
+        <div className="type-toggle" role="tablist" aria-label="Necessário repetir dose">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={repetirDose}
+            className={`type-toggle-btn ${repetirDose ? 'active' : ''}`}
+            onClick={() => setRepetirDose(true)}
+          >
+            Sim
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={!repetirDose}
+            className={`type-toggle-btn ${!repetirDose ? 'active' : ''}`}
+            onClick={() => setRepetirDose(false)}
+          >
+            Não
+          </button>
+        </div>
+        {!repetirDose && (
+          <span className="field-hint">Essa vacina não vai aparecer como atrasada nos resumos.</span>
+        )}
+      </div>
+
+      <label className="field">
+        <span className="field-label">Observações</span>
+        <input
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Ex: reação leve, levar carteirinha..."
+        />
+      </label>
+
+      {erro && <p className="auth-error">{erro}</p>}
+      {saved && (
+        <p className="form-success">
+          <Check size={16} strokeWidth={2.5} aria-hidden="true" />
+          {initialEntry ? 'Alterações salvas!' : 'Registrado com sucesso! Confira no histórico abaixo.'}
+        </p>
+      )}
+
+      <div className={initialEntry ? 'supply-end-form' : undefined}>
+        <button type="submit" className={`btn-pill ${initialEntry ? 'btn-pill-small' : ''}`} disabled={salvando}>
+          {salvando ? 'Salvando...' : submitLabel || 'Registrar'}
+        </button>
+        {onCancel && (
+          <button type="button" className="btn-text" onClick={onCancel}>
+            Cancelar
+          </button>
+        )}
+      </div>
+    </form>
+  )
+}
+
+function ConsultaForm({ petId, initialEntry, submitLabel, onSubmit, onCancel }) {
+  const [description, setDescription] = useState(initialEntry?.description || '')
+  const [date, setDate] = useState(initialEntry?.date || TODAY())
+  const [clinic, setClinic] = useState(initialEntry?.clinic || '')
+  const [professional, setProfessional] = useState(initialEntry?.professional || '')
+  const [specialty, setSpecialty] = useState(initialEntry?.specialty || '')
+  const [hasFollowUp, setHasFollowUp] = useState(Boolean(initialEntry?.nextDate))
+  const [nextDate, setNextDate] = useState(initialEntry?.nextDate || '')
+  const [attachment, setAttachment] = useState(null)
+  const [existingAttachment, setExistingAttachment] = useState(initialEntry?.attachment || null)
+  const [notes, setNotes] = useState(initialEntry?.notes || '')
+  const [saved, setSaved] = useState(false)
+  const [erro, setErro] = useState('')
+  const [salvando, setSalvando] = useState(false)
+
+  function handleAttachmentChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAttachment(file)
+    setExistingAttachment(null)
+  }
+
+  function removeAttachment() {
+    setAttachment(null)
+    setExistingAttachment(null)
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!petId || !date) return
+    setErro('')
+    setSalvando(true)
+    try {
+      const attachmentRemoved = Boolean(initialEntry?.attachment) && !existingAttachment && !attachment
+      await onSubmit({
+        description,
+        date,
+        nextDate: hasFollowUp ? nextDate : '',
+        notes,
+        clinic,
+        professional,
+        specialty,
+        attachment,
+        attachmentChanged: Boolean(attachment) || attachmentRemoved,
+      })
+      if (!initialEntry) {
+        setDescription('')
+        setClinic('')
+        setProfessional('')
+        setSpecialty('')
+        setHasFollowUp(false)
+        setNextDate('')
+        setAttachment(null)
+        setNotes('')
+      }
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2500)
+    } catch (err) {
+      setErro(err.message)
+    } finally {
+      setSalvando(false)
+    }
+  }
+
+  return (
+    <form className="card supply-form" onSubmit={handleSubmit}>
+      <label className="field">
+        <span className="field-label">Motivo da consulta</span>
+        <input
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Ex: Check-up anual, salivando muito..."
+        />
+      </label>
+
+      <label className="field">
+        <span className="field-label">Data da consulta</span>
+        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+        <span className="field-hint">Pode ser uma data passada (já realizada) ou futura (agendada)</span>
+      </label>
+
+      <label className="field">
+        <span className="field-label">Clínica</span>
+        <input
+          value={clinic}
+          onChange={(e) => setClinic(e.target.value)}
+          placeholder="Ex: Clínica Pet Amor"
+        />
+      </label>
+
+      <label className="field">
+        <span className="field-label">Profissional</span>
+        <input
+          value={professional}
+          onChange={(e) => setProfessional(e.target.value)}
+          placeholder="Ex: Dra. Ana Souza"
+        />
+      </label>
+
+      <label className="field">
+        <span className="field-label">Especialidade</span>
+        <input
+          value={specialty}
+          onChange={(e) => setSpecialty(e.target.value)}
+          placeholder="Ex: Clínico geral, dermatologia..."
+        />
+      </label>
+
+      <div className="field">
+        <span className="field-label">Tem retorno agendado?</span>
+        <div className="type-toggle" role="tablist" aria-label="Tem retorno agendado">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={!hasFollowUp}
+            className={`type-toggle-btn ${!hasFollowUp ? 'active' : ''}`}
+            onClick={() => {
+              setHasFollowUp(false)
+              setNextDate('')
+            }}
+          >
+            Não
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={hasFollowUp}
+            className={`type-toggle-btn ${hasFollowUp ? 'active' : ''}`}
+            onClick={() => setHasFollowUp(true)}
+          >
+            Sim
+          </button>
+        </div>
+      </div>
+
+      {hasFollowUp && (
+        <label className="field">
+          <span className="field-label">Data do retorno</span>
+          <input
+            type="date"
+            value={nextDate}
+            onChange={(e) => setNextDate(e.target.value)}
+            min={date}
+            required
+          />
+        </label>
+      )}
+
+      <label className="field">
+        <span className="field-label">Receita (foto ou PDF)</span>
+        <input type="file" accept="image/*,.pdf" onChange={handleAttachmentChange} />
+        {(attachment || existingAttachment) && (
+          <span className="field-hint attachment-hint">
+            <Paperclip size={13} strokeWidth={2.5} aria-hidden="true" />
+            {attachment ? attachment.name : existingAttachment.name}
+            <button
+              type="button"
+              className="attachment-remove"
+              onClick={removeAttachment}
+              aria-label="Remover anexo"
+            >
+              <X size={13} strokeWidth={2.5} />
+            </button>
+          </span>
+        )}
+      </label>
+
+      <label className="field">
+        <span className="field-label">Observações</span>
+        <input
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Ex: reação leve, levar carteirinha..."
+        />
+      </label>
+
+      {erro && <p className="auth-error">{erro}</p>}
+      {saved && (
+        <p className="form-success">
+          <Check size={16} strokeWidth={2.5} aria-hidden="true" />
+          {initialEntry ? 'Alterações salvas!' : 'Registrado com sucesso! Confira no histórico abaixo.'}
+        </p>
+      )}
+
+      <div className={initialEntry ? 'supply-end-form' : undefined}>
+        <button type="submit" className={`btn-pill ${initialEntry ? 'btn-pill-small' : ''}`} disabled={salvando}>
+          {salvando ? 'Salvando...' : submitLabel || 'Registrar'}
+        </button>
+        {onCancel && (
+          <button type="button" className="btn-text" onClick={onCancel}>
+            Cancelar
+          </button>
+        )}
+      </div>
+    </form>
+  )
+}
+
+function HistoryItem({ entry, petId, onUpdateRecord, onDeleteRecord }) {
+  const [editMode, setEditMode] = useState(false)
   const isConsulta = entry.type === 'consulta'
   const isFuture = entry.date > new Date().toISOString().slice(0, 10)
   const consultaMeta = [entry.clinic, entry.professional, entry.specialty].filter(Boolean).join(' · ')
+
+  async function handleSaveEdit(updates) {
+    await onUpdateRecord(entry.id, { ...updates, petId })
+    setEditMode(false)
+  }
+
+  function handleDelete() {
+    if (window.confirm(`Excluir este registro de ${isConsulta ? 'consulta' : 'vacina'}?`)) {
+      onDeleteRecord(entry.id)
+    }
+  }
+
+  if (editMode) {
+    const FormComponent = isConsulta ? ConsultaForm : VacinaForm
+    return (
+      <div className="card supply-history-item">
+        <FormComponent
+          petId={petId}
+          initialEntry={entry}
+          submitLabel="Salvar"
+          onSubmit={handleSaveEdit}
+          onCancel={() => setEditMode(false)}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="card supply-history-item">
@@ -75,6 +423,9 @@ function HistoryItem({ entry }) {
               {isConsulta ? 'Retorno em' : 'Próxima prevista em'} {formatDate(entry.nextDate)}
             </div>
           )}
+          {!isConsulta && entry.repetirDose === false && (
+            <div className="pet-meta">Não precisa repetir dose</div>
+          )}
           {entry.notes && <div className="pet-meta">{entry.notes}</div>}
           {entry.attachment && (
             <button
@@ -87,69 +438,139 @@ function HistoryItem({ entry }) {
             </button>
           )}
         </div>
+        <ActionMenu
+          ariaLabel="Mais opções do registro"
+          actions={[
+            { label: 'Editar', onClick: () => setEditMode(true) },
+            { label: 'Excluir', destructive: true, onClick: handleDelete },
+          ]}
+        />
       </div>
     </div>
   )
 }
 
-const EMPTY_FORM = {
-  description: '',
-  nextDate: '',
-  notes: '',
-  clinic: '',
-  professional: '',
-  specialty: '',
-  hasFollowUp: false,
-  attachment: null,
+function HistorySection({ title, entries, emptyLabel, petId, onUpdateRecord, onDeleteRecord }) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div>
+      <button
+        type="button"
+        className="history-toggle"
+        onClick={() => setOpen((prev) => !prev)}
+        aria-expanded={open}
+      >
+        <span className="history-toggle-label">{title} ({entries.length})</span>
+        {open ? <ChevronUp size={18} strokeWidth={2.2} /> : <ChevronDown size={18} strokeWidth={2.2} />}
+      </button>
+      {open && (
+        entries.length === 0 ? (
+          <div className="card coming-soon">
+            <p>{emptyLabel}</p>
+          </div>
+        ) : (
+          <div className="pet-list">
+            {entries.map((entry) => (
+              <HistoryItem
+                key={entry.id}
+                entry={entry}
+                petId={petId}
+                onUpdateRecord={onUpdateRecord}
+                onDeleteRecord={onDeleteRecord}
+              />
+            ))}
+          </div>
+        )
+      )}
+    </div>
+  )
 }
 
-function VacinasSection({ pets, records, onAddRecord }) {
-  const [selectedPetId, setSelectedPetId] = useState(pets[0]?.id)
-  const [type, setType] = useState('vacina')
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
-  const [form, setForm] = useState(EMPTY_FORM)
+function PlanoSaudeSummary({ pet }) {
+  const plano = pet.planoSaude
+  const hasPlano = plano?.nome || plano?.numero || plano?.link || plano?.attachment
+
+  if (!hasPlano) {
+    return (
+      <div className="card coming-soon">
+        <p>Nenhum plano de saúde cadastrado ainda para {pet.name}.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="card supply-status-card">
+      <div className="supply-status-top">
+        <span className="stat-icon tone-mint">
+          <ShieldCheck size={20} strokeWidth={2.2} />
+        </span>
+        <div className="supply-status-info">
+          <div className="supply-status-name">{plano.nome || 'Plano de saúde'}</div>
+          <div className="pet-meta">
+            {plano.numero ? `Carteirinha nº ${plano.numero}` : 'Sem número de carteirinha cadastrado'}
+          </div>
+        </div>
+      </div>
+      {(plano.attachment || plano.link) && (
+        <div className="plano-links">
+          {plano.attachment && (
+            <button
+              type="button"
+              className="btn-text attachment-link"
+              onClick={() => abrirAnexo(plano.attachment.path)}
+            >
+              <Paperclip size={13} strokeWidth={2.5} aria-hidden="true" />
+              Ver carteirinha
+            </button>
+          )}
+          {plano.link && (
+            <a className="btn-text" href={plano.link} target="_blank" rel="noopener noreferrer">
+              Abrir portal do plano
+            </a>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function PlanoSaudeForm({ pet, onSave }) {
+  const plano = pet.planoSaude
+  const [nome, setNome] = useState(plano?.nome || '')
+  const [numero, setNumero] = useState(plano?.numero || '')
+  const [link, setLink] = useState(plano?.link || '')
+  const [attachment, setAttachment] = useState(null)
+  const [existingAttachment, setExistingAttachment] = useState(plano?.attachment || null)
   const [saved, setSaved] = useState(false)
   const [erro, setErro] = useState('')
   const [salvando, setSalvando] = useState(false)
 
-  const selectedPet = pets.find((pet) => pet.id === selectedPetId)
-  const petRecords = getPetRecords(records, selectedPetId)
-  const isConsulta = type === 'consulta'
-
-  function setField(key, value) {
-    setForm((prev) => ({ ...prev, [key]: value }))
-  }
-
-  function handleTypeChange(nextType) {
-    setType(nextType)
-    setForm(EMPTY_FORM)
-  }
-
   function handleAttachmentChange(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    setField('attachment', file)
+    setAttachment(file)
+    setExistingAttachment(null)
+  }
+
+  function removeAttachment() {
+    setAttachment(null)
+    setExistingAttachment(null)
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!selectedPetId || !date) return
     setErro('')
     setSalvando(true)
     try {
-      await onAddRecord({
-        petId: selectedPetId,
-        type,
-        description: form.description,
-        date,
-        nextDate: form.hasFollowUp || !isConsulta ? form.nextDate : '',
-        notes: form.notes,
-        clinic: isConsulta ? form.clinic : '',
-        professional: isConsulta ? form.professional : '',
-        specialty: isConsulta ? form.specialty : '',
-        attachment: isConsulta ? form.attachment : null,
+      const attachmentRemoved = Boolean(plano?.attachment) && !existingAttachment && !attachment
+      await onSave({
+        nome,
+        numero,
+        link,
+        attachment,
+        attachmentChanged: Boolean(attachment) || attachmentRemoved,
       })
-      setForm(EMPTY_FORM)
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
     } catch (err) {
@@ -158,6 +579,86 @@ function VacinasSection({ pets, records, onAddRecord }) {
       setSalvando(false)
     }
   }
+
+  return (
+    <form className="card supply-form" onSubmit={handleSubmit}>
+      <label className="field">
+        <span className="field-label">Nome do plano</span>
+        <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex: Petlove Saúde, Sanor..." />
+      </label>
+
+      <label className="field">
+        <span className="field-label">Nº da carteirinha</span>
+        <input value={numero} onChange={(e) => setNumero(e.target.value)} placeholder="Ex: 000123456" />
+      </label>
+
+      <label className="field">
+        <span className="field-label">Link do site / portal do plano</span>
+        <input
+          type="url"
+          value={link}
+          onChange={(e) => setLink(e.target.value)}
+          placeholder="https://..."
+        />
+      </label>
+
+      <label className="field">
+        <span className="field-label">Carteirinha (foto ou PDF)</span>
+        <input type="file" accept="image/*,.pdf" onChange={handleAttachmentChange} />
+        {(attachment || existingAttachment) && (
+          <span className="field-hint attachment-hint">
+            <Paperclip size={13} strokeWidth={2.5} aria-hidden="true" />
+            {attachment ? attachment.name : existingAttachment.name}
+            <button
+              type="button"
+              className="attachment-remove"
+              onClick={removeAttachment}
+              aria-label="Remover anexo"
+            >
+              <X size={13} strokeWidth={2.5} />
+            </button>
+          </span>
+        )}
+      </label>
+
+      {erro && <p className="auth-error">{erro}</p>}
+      {saved && (
+        <p className="form-success">
+          <Check size={16} strokeWidth={2.5} aria-hidden="true" />
+          Plano de saúde salvo!
+        </p>
+      )}
+
+      <button type="submit" className="btn-pill" disabled={salvando}>
+        {salvando ? 'Salvando...' : 'Salvar plano de saúde'}
+      </button>
+    </form>
+  )
+}
+
+const SUB_SECTIONS = [
+  { key: 'vacina', label: 'Vacinas' },
+  { key: 'consulta', label: 'Consultas' },
+  { key: 'plano', label: 'Plano de saúde' },
+]
+
+function VacinasSection({
+  pets,
+  records,
+  onAddRecord,
+  onUpdateRecord,
+  onDeleteRecord,
+  onUpdatePlano,
+  preselectedPetId,
+  preselectedSubSection,
+}) {
+  const [selectedPetId, setSelectedPetId] = useState(preselectedPetId || pets[0]?.id)
+  const [subSection, setSubSection] = useState(preselectedSubSection || 'vacina')
+
+  const selectedPet = pets.find((pet) => pet.id === selectedPetId)
+  const petRecords = getPetRecords(records, selectedPetId)
+  const vacinaRecords = petRecords.filter((entry) => entry.type === 'vacina')
+  const consultaRecords = petRecords.filter((entry) => entry.type === 'consulta')
 
   return (
     <div className="racao-section">
@@ -179,178 +680,63 @@ function VacinasSection({ pets, records, onAddRecord }) {
 
       <NextRecordCard records={records} petId={selectedPetId} />
 
-      <div className="section-label">Registrar vacina ou consulta</div>
-      <form className="card supply-form" onSubmit={handleSubmit}>
-        <div className="type-toggle" role="tablist" aria-label="Tipo de registro">
-          {HEALTH_TYPES.map((healthType) => (
-            <button
-              key={healthType}
-              type="button"
-              role="tab"
-              aria-selected={type === healthType}
-              className={`type-toggle-btn ${type === healthType ? 'active' : ''}`}
-              onClick={() => handleTypeChange(healthType)}
-            >
-              {HEALTH_LABELS[healthType]}
-            </button>
-          ))}
-        </div>
+      <div className="type-toggle" role="tablist" aria-label="Seção de saúde">
+        {SUB_SECTIONS.map((section) => (
+          <button
+            key={section.key}
+            type="button"
+            role="tab"
+            aria-selected={subSection === section.key}
+            className={`type-toggle-btn ${subSection === section.key ? 'active' : ''}`}
+            onClick={() => setSubSection(section.key)}
+          >
+            {section.label}
+          </button>
+        ))}
+      </div>
 
-        <label className="field">
-          <span className="field-label">{isConsulta ? 'Motivo da consulta' : 'Nome da vacina'}</span>
-          <input
-            value={form.description}
-            onChange={(e) => setField('description', e.target.value)}
-            placeholder={isConsulta ? 'Ex: Check-up anual, salivando muito...' : 'Ex: V4, Raiva...'}
+      {subSection === 'vacina' && (
+        <>
+          <div className="section-label">Registrar vacina</div>
+          <VacinaForm
+            petId={selectedPetId}
+            onSubmit={(payload) => onAddRecord({ ...payload, petId: selectedPetId, type: 'vacina' })}
           />
-        </label>
-
-        <label className="field">
-          <span className="field-label">{isConsulta ? 'Data da consulta' : 'Data realizada'}</span>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            max={isConsulta ? undefined : new Date().toISOString().slice(0, 10)}
-            required
+          <HistorySection
+            title="Histórico de vacinas"
+            entries={vacinaRecords}
+            emptyLabel={`Nenhuma vacina registrada ainda para ${selectedPet?.name || 'esse pet'}.`}
+            petId={selectedPetId}
+            onUpdateRecord={onUpdateRecord}
+            onDeleteRecord={onDeleteRecord}
           />
-          {isConsulta && (
-            <span className="field-hint">Pode ser uma data passada (já realizada) ou futura (agendada)</span>
-          )}
-        </label>
+        </>
+      )}
 
-        {isConsulta && (
-          <>
-            <label className="field">
-              <span className="field-label">Clínica</span>
-              <input
-                value={form.clinic}
-                onChange={(e) => setField('clinic', e.target.value)}
-                placeholder="Ex: Clínica Pet Amor"
-              />
-            </label>
-
-            <label className="field">
-              <span className="field-label">Profissional</span>
-              <input
-                value={form.professional}
-                onChange={(e) => setField('professional', e.target.value)}
-                placeholder="Ex: Dra. Ana Souza"
-              />
-            </label>
-
-            <label className="field">
-              <span className="field-label">Especialidade</span>
-              <input
-                value={form.specialty}
-                onChange={(e) => setField('specialty', e.target.value)}
-                placeholder="Ex: Clínico geral, dermatologia..."
-              />
-            </label>
-
-            <div className="field">
-              <span className="field-label">Tem retorno agendado?</span>
-              <div className="type-toggle" role="tablist" aria-label="Tem retorno agendado">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={!form.hasFollowUp}
-                  className={`type-toggle-btn ${!form.hasFollowUp ? 'active' : ''}`}
-                  onClick={() => setForm((prev) => ({ ...prev, hasFollowUp: false, nextDate: '' }))}
-                >
-                  Não
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={form.hasFollowUp}
-                  className={`type-toggle-btn ${form.hasFollowUp ? 'active' : ''}`}
-                  onClick={() => setField('hasFollowUp', true)}
-                >
-                  Sim
-                </button>
-              </div>
-            </div>
-
-            {form.hasFollowUp && (
-              <label className="field">
-                <span className="field-label">Data do retorno</span>
-                <input
-                  type="date"
-                  value={form.nextDate}
-                  onChange={(e) => setField('nextDate', e.target.value)}
-                  min={date}
-                  required
-                />
-              </label>
-            )}
-
-            <label className="field">
-              <span className="field-label">Receita (foto ou PDF)</span>
-              <input type="file" accept="image/*,.pdf" onChange={handleAttachmentChange} />
-              {form.attachment && (
-                <span className="field-hint attachment-hint">
-                  <Paperclip size={13} strokeWidth={2.5} aria-hidden="true" />
-                  {form.attachment.name}
-                  <button
-                    type="button"
-                    className="attachment-remove"
-                    onClick={() => setField('attachment', null)}
-                    aria-label="Remover anexo"
-                  >
-                    <X size={13} strokeWidth={2.5} />
-                  </button>
-                </span>
-              )}
-            </label>
-          </>
-        )}
-
-        {!isConsulta && (
-          <label className="field">
-            <span className="field-label">Próxima dose prevista</span>
-            <input
-              type="date"
-              value={form.nextDate}
-              onChange={(e) => setField('nextDate', e.target.value)}
-              min={date}
-            />
-          </label>
-        )}
-
-        <label className="field">
-          <span className="field-label">Observações</span>
-          <input
-            value={form.notes}
-            onChange={(e) => setField('notes', e.target.value)}
-            placeholder="Ex: reação leve, levar carteirinha..."
+      {subSection === 'consulta' && (
+        <>
+          <div className="section-label">Registrar consulta</div>
+          <ConsultaForm
+            petId={selectedPetId}
+            onSubmit={(payload) => onAddRecord({ ...payload, petId: selectedPetId, type: 'consulta' })}
           />
-        </label>
+          <HistorySection
+            title="Histórico de consultas"
+            entries={consultaRecords}
+            emptyLabel={`Nenhuma consulta registrada ainda para ${selectedPet?.name || 'esse pet'}.`}
+            petId={selectedPetId}
+            onUpdateRecord={onUpdateRecord}
+            onDeleteRecord={onDeleteRecord}
+          />
+        </>
+      )}
 
-        {erro && <p className="auth-error">{erro}</p>}
-        {saved && (
-          <p className="form-success">
-            <Check size={16} strokeWidth={2.5} aria-hidden="true" />
-            Registrado com sucesso! Confira no histórico abaixo.
-          </p>
-        )}
-
-        <button type="submit" className="btn-pill" disabled={salvando}>
-          {salvando ? 'Salvando...' : 'Registrar'}
-        </button>
-      </form>
-
-      <div className="section-label">Histórico</div>
-      {petRecords.length === 0 ? (
-        <div className="card coming-soon">
-          <p>Nenhum registro ainda para {selectedPet?.name || 'esse pet'}.</p>
-        </div>
-      ) : (
-        <div className="pet-list">
-          {petRecords.map((entry) => (
-            <HistoryItem key={entry.id} entry={entry} />
-          ))}
-        </div>
+      {subSection === 'plano' && selectedPet && (
+        <>
+          <PlanoSaudeSummary pet={selectedPet} />
+          <div className="section-label">Editar plano de saúde</div>
+          <PlanoSaudeForm pet={selectedPet} onSave={(payload) => onUpdatePlano(selectedPetId, payload)} />
+        </>
       )}
     </div>
   )

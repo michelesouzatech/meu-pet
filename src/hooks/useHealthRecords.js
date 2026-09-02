@@ -20,6 +20,7 @@ function mapRecord(row) {
     clinic: row.clinica || '',
     professional: row.profissional || '',
     specialty: row.especialidade || '',
+    repetirDose: row.repetir_dose,
     attachment: row.anexo_url
       ? { name: row.anexo_nome || row.anexo_url.split('/').pop(), path: row.anexo_url }
       : null,
@@ -33,7 +34,7 @@ export function useHealthRecords(casaId) {
     supabase
       .from('vacinas_consultas')
       .select(
-        'id, pet_id, tipo, descricao, data, proxima_data, observacoes, clinica, profissional, especialidade, anexo_url, anexo_nome'
+        'id, pet_id, tipo, descricao, data, proxima_data, observacoes, clinica, profissional, especialidade, anexo_url, anexo_nome, repetir_dose'
       )
       .order('data', { ascending: false })
       .then(({ data }) => setRecords((data || []).map(mapRecord)))
@@ -53,6 +54,7 @@ export function useHealthRecords(casaId) {
     clinic,
     professional,
     specialty,
+    repetirDose,
     attachment,
   }) {
     let anexoUrl = null
@@ -76,6 +78,7 @@ export function useHealthRecords(casaId) {
       clinica: clinic?.trim() || null,
       profissional: professional?.trim() || null,
       especialidade: specialty?.trim() || null,
+      repetir_dose: repetirDose !== false,
       anexo_url: anexoUrl,
       anexo_nome: anexoNome,
     })
@@ -83,5 +86,57 @@ export function useHealthRecords(casaId) {
     await reload()
   }
 
-  return { records, addRecord }
+  async function updateRecord(
+    id,
+    {
+      petId,
+      description,
+      date,
+      nextDate,
+      notes,
+      clinic,
+      professional,
+      specialty,
+      repetirDose,
+      attachment,
+      attachmentChanged,
+    }
+  ) {
+    const payload = {
+      descricao: description?.trim() || null,
+      data: date,
+      proxima_data: nextDate || null,
+      observacoes: notes?.trim() || null,
+      clinica: clinic?.trim() || null,
+      profissional: professional?.trim() || null,
+      especialidade: specialty?.trim() || null,
+      repetir_dose: repetirDose !== false,
+    }
+
+    if (attachmentChanged) {
+      if (attachment instanceof File) {
+        const nomeSeguro = attachment.name.replace(/[^a-zA-Z0-9._-]/g, '-')
+        const path = `${casaId}/${petId}-${Date.now()}-${nomeSeguro}`
+        const { error: uploadError } = await supabase.storage.from('anexos').upload(path, attachment)
+        if (uploadError) throw uploadError
+        payload.anexo_url = path
+        payload.anexo_nome = attachment.name
+      } else {
+        payload.anexo_url = null
+        payload.anexo_nome = null
+      }
+    }
+
+    const { error } = await supabase.from('vacinas_consultas').update(payload).eq('id', id)
+    if (error) throw error
+    await reload()
+  }
+
+  async function deleteRecord(id) {
+    const { error } = await supabase.from('vacinas_consultas').delete().eq('id', id)
+    if (error) throw error
+    await reload()
+  }
+
+  return { records, addRecord, updateRecord, deleteRecord }
 }

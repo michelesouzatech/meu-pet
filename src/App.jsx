@@ -13,6 +13,7 @@ import { usePets } from './hooks/usePets'
 import { useSupplies } from './hooks/useSupplies'
 import { useHealthRecords } from './hooks/useHealthRecords'
 import { useBaths } from './hooks/useBaths'
+import { useWeights } from './hooks/useWeights'
 import { useAuth } from './hooks/useAuth'
 import { usePushNotifications } from './hooks/usePushNotifications'
 
@@ -35,11 +36,19 @@ function App() {
   const { session, perfil, loading, signIn, signUp, signOut, entrarNaCasa } = useAuth()
   const [activeSection, setActiveSection] = useState('casa')
   const [activePet, setActivePet] = useState('casa')
+  const [healthPetId, setHealthPetId] = useState(null)
+  const [healthSubSection, setHealthSubSection] = useState('vacina')
   const casaId = perfil?.casa_id
-  const { pets, addPet, updatePet } = usePets(casaId)
+  const { pets, addPet, updatePet, updatePlanoSaude } = usePets(casaId)
   const { supplies, addSupply, markSupplyEnded, updateSupply, deleteSupply } = useSupplies(casaId)
-  const { records: healthRecords, addRecord: addHealthRecord } = useHealthRecords(casaId)
+  const {
+    records: healthRecords,
+    addRecord: addHealthRecord,
+    updateRecord: updateHealthRecord,
+    deleteRecord: deleteHealthRecord,
+  } = useHealthRecords(casaId)
   const { baths, addBath, updateBathGroup } = useBaths()
+  const { weights, addWeight, updateWeight, deleteWeight } = useWeights()
   const { permission, requestPermission } = usePushNotifications(session?.user?.id)
 
   if (loading) {
@@ -52,6 +61,12 @@ function App() {
 
   if (!perfil) {
     return <CompletarCasaScreen session={session} entrarNaCasa={entrarNaCasa} />
+  }
+
+  function openPetHealth(petId, subSection = 'vacina') {
+    setHealthPetId(petId)
+    setHealthSubSection(subSection)
+    setActiveSection('vacinas')
   }
 
   const petSwitcherItems = [
@@ -153,7 +168,13 @@ function App() {
           pet={pets.find((pet) => pet.id === activePet)}
           healthRecords={healthRecords}
           baths={baths}
+          weights={weights}
           onBack={() => setActivePet('casa')}
+          onOpenHealth={openPetHealth}
+          onEditProfile={() => setActiveSection('perfil')}
+          onAddWeight={addWeight}
+          onUpdateWeight={updateWeight}
+          onDeleteWeight={deleteWeight}
         />
       )}
       {activeSection === 'perfil' && (
@@ -175,7 +196,16 @@ function App() {
         />
       )}
       {activeSection === 'vacinas' && (
-        <VacinasSection pets={pets} records={healthRecords} onAddRecord={addHealthRecord} />
+        <VacinasSection
+          pets={pets}
+          records={healthRecords}
+          onAddRecord={addHealthRecord}
+          onUpdateRecord={updateHealthRecord}
+          onDeleteRecord={deleteHealthRecord}
+          onUpdatePlano={updatePlanoSaude}
+          preselectedPetId={healthPetId}
+          preselectedSubSection={healthSubSection}
+        />
       )}
       {activeSection === 'banhos' && (
         <BanhosSection pets={pets} baths={baths} onAddBath={addBath} onUpdateBath={updateBathGroup} />

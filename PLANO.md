@@ -21,9 +21,9 @@
 | Tela | O que você faz nela |
 |---|---|
 | **Casa (tela de entrada)** | Abre o app e já vê os alertas, e os pets lado a lado numa grade compacta (foto, nome, sexo, idade). Clicar num pet — pelo card da grade ou pelo botão dele no seletor do topo — leva pro perfil completo |
-| **Perfil do Pet** | Foto grande, nome, e um resumo em cápsula com sexo, raça, idade, status da próxima vacina e do próximo banho, além de um campo livre "Sobre o pet" |
+| **Perfil do Pet** | Foto grande, nome, e um resumo em cápsula com sexo, raça, idade, status da próxima vacina e do próximo banho; cards de resumo de saúde (próxima vacina/consulta, última consulta), acompanhamento de peso (registro e histórico) e plano de saúde, além de um campo livre "Sobre o pet" |
 | **Ração & Higiene** | Registra compras (marca, submarca, preço, local de compra) e quando cada uma acaba de verdade — com esse histórico, o app aprende sozinho quanto tempo costuma durar e avisa quando está acabando. Dá pra editar ou excluir qualquer item cadastrado errado |
-| **Vacinas & Saúde** | Histórico de vacinas e consultas veterinárias, próximas doses/consultas, alerta quando estiver chegando a data |
+| **Vacinas & Saúde** | Organizada em 3 sub-abas por pet: **Vacinas**, **Consultas** e **Plano de saúde**. Histórico de vacinas (com opção "necessário repetir dose?" — se "não", não entra mais em atraso) e consultas, com edição e exclusão de qualquer registro; cadastro do plano de saúde (nome, nº da carteirinha, anexo da carteirinha, link do portal); resumo de saúde e do plano no Perfil do Pet |
 | **Banhos** | Histórico de banhos e alerta de quando o próximo está previsto; como Theo e Chloe tomam banho juntos, dá pra selecionar os dois de uma vez ao registrar |
 
 ## 3. O diferencial (detalhado)
@@ -55,12 +55,21 @@ Compra de Ração/Higiene: tipo (ração ou higiene), marca, submarca/linha,
   ainda não arrisca uma previsão)
 
 Vacina: pet, nome da vacina, data realizada, próxima dose prevista
-  (opcional), observações
+  (opcional), necessário repetir dose (sim/não — se "não", não entra
+  em atraso no resumo), observações. Editável e excluível pelo
+  histórico
 
 Consulta veterinária: pet, motivo/descrição, data da consulta,
   clínica, profissional, especialidade, se tem retorno agendado
   (e a data, se tiver), observações, anexo da receita (foto ou PDF,
-  opcional)
+  opcional). Editável e excluível pelo histórico
+
+Peso: pet, data, valor — registro e histórico por pet, direto no
+  Perfil
+
+Plano de saúde: pet, nome do plano, nº da carteirinha, anexo da
+  carteirinha (foto ou PDF), link do site/portal do plano — um
+  cadastro por pet, com resumo no Perfil
 
 Banho: pet, data do banho, próxima data prevista
   (o registro pode ser feito pra vários pets de uma vez, quando
@@ -80,6 +89,7 @@ Cada registro de Vacina/Consulta e de Banho pertence a um pet específico (Theo 
 | [x] **4. Banhos** | Histórico de banhos, próxima data prevista, alertas no Dashboard | Dever de casa |
 | [x] **Final. Publicar** | Supabase — banco de dados organizado por "casa" (cada casa com seus próprios pets e dados, sem uma casa ver a outra), contas separadas para você e o Thiago com acesso compartilhado à mesma casa, sistema de convite por link para adicionar morador a uma casa. Deploy no ar na Vercel, com favicon e ícone de "adicionar à tela inicial" do celular (a patinha) | Aula 3 |
 | [x] **5. Refinamentos de interface** | Tela "Casa" como entrada padrão, com os pets lado a lado em cards compactos e perfil completo por pet (foto, sexo, raça, idade, status de vacina/banho, campo "sobre o pet"); "Areia" renomeada para "Higiene" com ícone próprio; edição e exclusão de compras cadastradas; registro de banho para vários pets de uma vez | Pós-lançamento |
+| [x] **6. Saúde completa** | Tela "Vacinas & Saúde" reorganizada em 3 sub-abas (vacinas / consultas / plano de saúde); edição e exclusão de vacinas e consultas no histórico; campo "necessário repetir dose?" nas vacinas; resumo de saúde no Perfil do Pet com atalho pro histórico completo; registro e acompanhamento de peso no Perfil; cadastro de plano de saúde (nome, carteirinha, anexo, link) com resumo no Perfil | Pós-lançamento |
 
 ## 6. Versão 2 (fica pra depois)
 
