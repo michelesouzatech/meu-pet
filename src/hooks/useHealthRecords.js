@@ -103,6 +103,7 @@ export function useHealthRecords(casaId) {
     }
   ) {
     const payload = {
+      pet_id: petId,
       descricao: description?.trim() || null,
       data: date,
       proxima_data: nextDate || null,

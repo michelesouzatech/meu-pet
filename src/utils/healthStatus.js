@@ -8,15 +8,17 @@ function isTrackable(record) {
   return Boolean(record.nextDate) && !(record.type === 'vacina' && record.repetirDose === false)
 }
 
-export function getPetRecords(records, petId) {
-  return records
-    .filter((record) => record.petId === petId)
-    .sort((a, b) => (a.date < b.date ? 1 : -1))
-}
-
 export function getNextHealthRecord(records, petId) {
   const upcoming = records
     .filter((record) => record.petId === petId && isTrackable(record))
+    .map((record) => ({ record, daysLeft: daysUntil(record.nextDate) }))
+    .sort((a, b) => a.daysLeft - b.daysLeft)
+  return upcoming[0] || null
+}
+
+export function getNextHealthRecordOverall(records) {
+  const upcoming = records
+    .filter(isTrackable)
     .map((record) => ({ record, daysLeft: daysUntil(record.nextDate) }))
     .sort((a, b) => a.daysLeft - b.daysLeft)
   return upcoming[0] || null

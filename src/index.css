@@ -432,6 +432,12 @@ button {
 .tag.mint { background: var(--tag-mint); }
 .tag.coral { background: var(--tag-coral); }
 
+.history-pet-tag {
+  align-self: flex-start;
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
 .btn-pill {
   align-self: stretch;
   justify-content: center;
@@ -762,7 +768,6 @@ button {
   border: none;
   cursor: pointer;
   text-align: left;
-  border-left: 5px solid var(--color-alert-warning);
   transition: transform 0.12s ease;
 }
 
@@ -770,14 +775,68 @@ button {
   transform: scale(0.98);
 }
 
-.alert-card.urgent {
-  border-left-color: var(--color-alert-urgent);
-}
-
 .alert-card-text {
   font-size: 13px;
   font-weight: 700;
   color: var(--color-text);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(43, 35, 32, 0.45);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 20px;
+  z-index: 50;
+}
+
+.modal-sheet {
+  width: 100%;
+  max-width: 440px;
+  background: var(--color-card);
+  border-radius: var(--radius-lg);
+  padding: 22px 20px calc(22px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 -16px 32px -14px rgba(43, 35, 32, 0.35);
+}
+
+.modal-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.modal-pet-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-pet-photo {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent-soft);
+  flex-shrink: 0;
+}
+
+.modal-pet-photo .pet-photo-initial {
+  font-size: 18px;
+}
+
+.modal-pet-name {
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
 }
 
 .racao-section {

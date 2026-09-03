@@ -159,6 +159,7 @@ function App() {
           supplies={supplies}
           healthRecords={healthRecords}
           baths={baths}
+          weights={weights}
           onAlertClick={setActiveSection}
           onSelectPet={setActivePet}
         />

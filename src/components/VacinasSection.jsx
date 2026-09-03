@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Syringe, Paperclip, X, Check, ChevronDown, ChevronUp, ShieldCheck } from 'lucide-react'
 import { HEALTH_LABELS } from '../hooks/useHealthRecords'
-import { getPetRecords, getNextHealthRecord, formatHealthDate, healthDaysLeftLabel } from '../utils/healthStatus'
+import { getNextHealthRecordOverall, formatHealthDate, healthDaysLeftLabel } from '../utils/healthStatus'
 import { supabase } from '../lib/supabaseClient'
 import ActionMenu from './ActionMenu'
 
@@ -13,8 +13,9 @@ async function abrirAnexo(path) {
 const formatDate = formatHealthDate
 const daysLeftLabel = healthDaysLeftLabel
 
-function NextRecordCard({ records, petId }) {
-  const next = getNextHealthRecord(records, petId)
+function NextRecordCard({ records, pets }) {
+  const next = getNextHealthRecordOverall(records)
+  const petName = next ? pets.find((pet) => pet.id === next.record.petId)?.name : null
 
   return (
     <div className="card supply-status-card">
@@ -26,7 +27,7 @@ function NextRecordCard({ records, petId }) {
           <div className="supply-status-name">Próxima vacina/consulta</div>
           <div className="pet-meta">
             {next
-              ? [HEALTH_LABELS[next.record.type], next.record.description].filter(Boolean).join(' · ')
+              ? [HEALTH_LABELS[next.record.type], next.record.description, petName].filter(Boolean).join(' · ')
               : 'Nada agendado ainda'}
           </div>
         </div>
@@ -40,9 +41,29 @@ function NextRecordCard({ records, petId }) {
   )
 }
 
+function PetSelect({ pets, petId, onChange }) {
+  return (
+    <div className="pet-multiselect" role="radiogroup" aria-label="Selecionar pet">
+      {pets.map((pet) => (
+        <button
+          key={pet.id}
+          type="button"
+          role="radio"
+          aria-checked={petId === pet.id}
+          className={`pet-multiselect-chip ${petId === pet.id ? 'active' : ''}`}
+          onClick={() => onChange(pet.id)}
+        >
+          {pet.name}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 const TODAY = () => new Date().toISOString().slice(0, 10)
 
-function VacinaForm({ petId, initialEntry, submitLabel, onSubmit, onCancel }) {
+function VacinaForm({ pets, defaultPetId, initialEntry, submitLabel, onSubmit, onCancel }) {
+  const [petId, setPetId] = useState(initialEntry?.petId || defaultPetId)
   const [description, setDescription] = useState(initialEntry?.description || '')
   const [date, setDate] = useState(initialEntry?.date || TODAY())
   const [nextDate, setNextDate] = useState(initialEntry?.nextDate || '')
@@ -59,6 +80,7 @@ function VacinaForm({ petId, initialEntry, submitLabel, onSubmit, onCancel }) {
     setSalvando(true)
     try {
       await onSubmit({
+        petId,
         description,
         date,
         nextDate,
@@ -86,6 +108,11 @@ function VacinaForm({ petId, initialEntry, submitLabel, onSubmit, onCancel }) {
 
   return (
     <form className="card supply-form" onSubmit={handleSubmit}>
+      <div className="field">
+        <span className="field-label">Pet</span>
+        <PetSelect pets={pets} petId={petId} onChange={setPetId} />
+      </div>
+
       <label className="field">
         <span className="field-label">Nome da vacina</span>
         <input
@@ -174,7 +201,8 @@ function VacinaForm({ petId, initialEntry, submitLabel, onSubmit, onCancel }) {
   )
 }
 
-function ConsultaForm({ petId, initialEntry, submitLabel, onSubmit, onCancel }) {
+function ConsultaForm({ pets, defaultPetId, initialEntry, submitLabel, onSubmit, onCancel }) {
+  const [petId, setPetId] = useState(initialEntry?.petId || defaultPetId)
   const [description, setDescription] = useState(initialEntry?.description || '')
   const [date, setDate] = useState(initialEntry?.date || TODAY())
   const [clinic, setClinic] = useState(initialEntry?.clinic || '')
@@ -209,6 +237,7 @@ function ConsultaForm({ petId, initialEntry, submitLabel, onSubmit, onCancel }) 
     try {
       const attachmentRemoved = Boolean(initialEntry?.attachment) && !existingAttachment && !attachment
       await onSubmit({
+        petId,
         description,
         date,
         nextDate: hasFollowUp ? nextDate : '',
@@ -240,6 +269,11 @@ function ConsultaForm({ petId, initialEntry, submitLabel, onSubmit, onCancel }) 
 
   return (
     <form className="card supply-form" onSubmit={handleSubmit}>
+      <div className="field">
+        <span className="field-label">Pet</span>
+        <PetSelect pets={pets} petId={petId} onChange={setPetId} />
+      </div>
+
       <label className="field">
         <span className="field-label">Motivo da consulta</span>
         <input
@@ -372,14 +406,15 @@ function ConsultaForm({ petId, initialEntry, submitLabel, onSubmit, onCancel }) 
   )
 }
 
-function HistoryItem({ entry, petId, onUpdateRecord, onDeleteRecord }) {
+function HistoryItem({ entry, pets, onUpdateRecord, onDeleteRecord }) {
   const [editMode, setEditMode] = useState(false)
   const isConsulta = entry.type === 'consulta'
   const isFuture = entry.date > new Date().toISOString().slice(0, 10)
   const consultaMeta = [entry.clinic, entry.professional, entry.specialty].filter(Boolean).join(' · ')
+  const petName = pets.find((pet) => pet.id === entry.petId)?.name
 
   async function handleSaveEdit(updates) {
-    await onUpdateRecord(entry.id, { ...updates, petId })
+    await onUpdateRecord(entry.id, updates)
     setEditMode(false)
   }
 
@@ -394,7 +429,7 @@ function HistoryItem({ entry, petId, onUpdateRecord, onDeleteRecord }) {
     return (
       <div className="card supply-history-item">
         <FormComponent
-          petId={petId}
+          pets={pets}
           initialEntry={entry}
           submitLabel="Salvar"
           onSubmit={handleSaveEdit}
@@ -414,6 +449,7 @@ function HistoryItem({ entry, petId, onUpdateRecord, onDeleteRecord }) {
           <div className="supply-history-title">
             {[HEALTH_LABELS[entry.type], entry.description].filter(Boolean).join(' · ')}
           </div>
+          {petName && <span className="tag lilac history-pet-tag">{petName}</span>}
           <div className="pet-meta">
             {isConsulta && isFuture ? 'Agendada para' : 'Realizada em'} {formatDate(entry.date)}
           </div>
@@ -450,7 +486,7 @@ function HistoryItem({ entry, petId, onUpdateRecord, onDeleteRecord }) {
   )
 }
 
-function HistorySection({ title, entries, emptyLabel, petId, onUpdateRecord, onDeleteRecord }) {
+function HistorySection({ title, entries, emptyLabel, pets, onUpdateRecord, onDeleteRecord }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -475,7 +511,7 @@ function HistorySection({ title, entries, emptyLabel, petId, onUpdateRecord, onD
               <HistoryItem
                 key={entry.id}
                 entry={entry}
-                petId={petId}
+                pets={pets}
                 onUpdateRecord={onUpdateRecord}
                 onDeleteRecord={onDeleteRecord}
               />
@@ -652,33 +688,20 @@ function VacinasSection({
   preselectedPetId,
   preselectedSubSection,
 }) {
-  const [selectedPetId, setSelectedPetId] = useState(preselectedPetId || pets[0]?.id)
+  const [planoPetId, setPlanoPetId] = useState(preselectedPetId || pets[0]?.id)
   const [subSection, setSubSection] = useState(preselectedSubSection || 'vacina')
 
-  const selectedPet = pets.find((pet) => pet.id === selectedPetId)
-  const petRecords = getPetRecords(records, selectedPetId)
-  const vacinaRecords = petRecords.filter((entry) => entry.type === 'vacina')
-  const consultaRecords = petRecords.filter((entry) => entry.type === 'consulta')
+  const planoPet = pets.find((pet) => pet.id === planoPetId)
+  const vacinaRecords = records
+    .filter((entry) => entry.type === 'vacina')
+    .sort((a, b) => (a.date < b.date ? 1 : -1))
+  const consultaRecords = records
+    .filter((entry) => entry.type === 'consulta')
+    .sort((a, b) => (a.date < b.date ? 1 : -1))
 
   return (
     <div className="racao-section">
-      <div className="section-label">Pet</div>
-      <div className="type-toggle" role="tablist" aria-label="Selecionar pet">
-        {pets.map((pet) => (
-          <button
-            key={pet.id}
-            type="button"
-            role="tab"
-            aria-selected={selectedPetId === pet.id}
-            className={`type-toggle-btn ${selectedPetId === pet.id ? 'active' : ''}`}
-            onClick={() => setSelectedPetId(pet.id)}
-          >
-            {pet.name}
-          </button>
-        ))}
-      </div>
-
-      <NextRecordCard records={records} petId={selectedPetId} />
+      <NextRecordCard records={records} pets={pets} />
 
       <div className="type-toggle" role="tablist" aria-label="Seção de saúde">
         {SUB_SECTIONS.map((section) => (
@@ -699,14 +722,15 @@ function VacinasSection({
         <>
           <div className="section-label">Registrar vacina</div>
           <VacinaForm
-            petId={selectedPetId}
-            onSubmit={(payload) => onAddRecord({ ...payload, petId: selectedPetId, type: 'vacina' })}
+            pets={pets}
+            defaultPetId={preselectedPetId || pets[0]?.id}
+            onSubmit={(payload) => onAddRecord({ ...payload, type: 'vacina' })}
           />
           <HistorySection
             title="Histórico de vacinas"
             entries={vacinaRecords}
-            emptyLabel={`Nenhuma vacina registrada ainda para ${selectedPet?.name || 'esse pet'}.`}
-            petId={selectedPetId}
+            emptyLabel="Nenhuma vacina registrada ainda."
+            pets={pets}
             onUpdateRecord={onUpdateRecord}
             onDeleteRecord={onDeleteRecord}
           />
@@ -717,25 +741,32 @@ function VacinasSection({
         <>
           <div className="section-label">Registrar consulta</div>
           <ConsultaForm
-            petId={selectedPetId}
-            onSubmit={(payload) => onAddRecord({ ...payload, petId: selectedPetId, type: 'consulta' })}
+            pets={pets}
+            defaultPetId={preselectedPetId || pets[0]?.id}
+            onSubmit={(payload) => onAddRecord({ ...payload, type: 'consulta' })}
           />
           <HistorySection
             title="Histórico de consultas"
             entries={consultaRecords}
-            emptyLabel={`Nenhuma consulta registrada ainda para ${selectedPet?.name || 'esse pet'}.`}
-            petId={selectedPetId}
+            emptyLabel="Nenhuma consulta registrada ainda."
+            pets={pets}
             onUpdateRecord={onUpdateRecord}
             onDeleteRecord={onDeleteRecord}
           />
         </>
       )}
 
-      {subSection === 'plano' && selectedPet && (
+      {subSection === 'plano' && (
         <>
-          <PlanoSaudeSummary pet={selectedPet} />
-          <div className="section-label">Editar plano de saúde</div>
-          <PlanoSaudeForm pet={selectedPet} onSave={(payload) => onUpdatePlano(selectedPetId, payload)} />
+          <div className="section-label">Pet</div>
+          <PetSelect pets={pets} petId={planoPetId} onChange={setPlanoPetId} />
+          {planoPet && (
+            <>
+              <PlanoSaudeSummary pet={planoPet} />
+              <div className="section-label">Editar plano de saúde</div>
+              <PlanoSaudeForm pet={planoPet} onSave={(payload) => onUpdatePlano(planoPetId, payload)} />
+            </>
+          )}
         </>
       )}
     </div>
