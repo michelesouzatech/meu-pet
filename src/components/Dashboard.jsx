@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { PawPrint, Syringe, ShowerHead } from 'lucide-react'
-import WeightQuickView from './WeightQuickView'
 import { formatAge } from '../utils/petAge'
 import { SEX_LABELS } from '../hooks/usePets'
 import { SUPPLY_LABELS, SUPPLY_ICONS, SUPPLY_TONES } from '../hooks/useSupplies'
@@ -76,14 +75,14 @@ export function bathStatLabel(baths, petId) {
 
 const GRID_TONES = ['1', '2', '3', '4']
 
-function PetGridCard({ pet, index, onClick }) {
+function PetGridCard({ pet, index, onSelect }) {
   const initial = (pet.name || '?').charAt(0).toUpperCase()
   const tone = GRID_TONES[index % GRID_TONES.length]
   const age = formatAge(pet.birthDate)
   const sexLabel = SEX_LABELS[pet.sex]
 
   return (
-    <button type="button" className={`pet-grid-card tone-${tone}`} onClick={() => onClick(pet.id)}>
+    <button type="button" className={`pet-grid-card tone-${tone}`} onClick={() => onSelect(pet.id)}>
       <div className="pet-grid-photo">
         {pet.photo ? (
           <img src={pet.photo} alt="" className="pet-photo-img" />
@@ -102,10 +101,7 @@ function PetGridCard({ pet, index, onClick }) {
   )
 }
 
-function Dashboard({ pets, supplies, healthRecords, baths, weights, onAlertClick, onSelectPet }) {
-  const [quickViewPetId, setQuickViewPetId] = useState(null)
-  const quickViewPet = pets.find((pet) => pet.id === quickViewPetId)
-
+function Dashboard({ pets, supplies, healthRecords, baths, onAlertClick, onSelectPet }) {
   const supplyAlerts = getSupplyAlerts(supplies).map((alert) => ({
     id: `supply-${alert.type}`,
     icon: SUPPLY_ICONS[alert.type],
@@ -157,21 +153,9 @@ function Dashboard({ pets, supplies, healthRecords, baths, weights, onAlertClick
       <div className="section-label">Seus pets</div>
       <div className="pet-grid">
         {pets.map((pet, index) => (
-          <PetGridCard key={pet.id} pet={pet} index={index} onClick={setQuickViewPetId} />
+          <PetGridCard key={pet.id} pet={pet} index={index} onSelect={onSelectPet} />
         ))}
       </div>
-
-      {quickViewPet && (
-        <WeightQuickView
-          pet={quickViewPet}
-          weights={weights}
-          onClose={() => setQuickViewPetId(null)}
-          onOpenProfile={() => {
-            setQuickViewPetId(null)
-            onSelectPet(quickViewPet.id)
-          }}
-        />
-      )}
     </div>
   )
 }

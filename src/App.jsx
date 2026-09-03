@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Home, Syringe, ShowerHead, User, PawPrint, Bell, LogOut } from 'lucide-react'
 import FoodBowlIcon from './icons/FoodBowlIcon'
 import Dashboard from './components/Dashboard'
+import PetSummaryScreen from './components/PetSummaryScreen'
 import PetProfileScreen from './components/PetProfileScreen'
 import PerfilSection from './components/PerfilSection'
 import RacaoSection from './components/RacaoSection'
@@ -36,6 +37,7 @@ function App() {
   const { session, perfil, loading, signIn, signUp, signOut, entrarNaCasa } = useAuth()
   const [activeSection, setActiveSection] = useState('casa')
   const [activePet, setActivePet] = useState('casa')
+  const [petView, setPetView] = useState('full')
   const [healthPetId, setHealthPetId] = useState(null)
   const [healthSubSection, setHealthSubSection] = useState('vacina')
   const casaId = perfil?.casa_id
@@ -67,6 +69,16 @@ function App() {
     setHealthPetId(petId)
     setHealthSubSection(subSection)
     setActiveSection('vacinas')
+  }
+
+  function openPetSummary(petId) {
+    setActivePet(petId)
+    setPetView('resumo')
+  }
+
+  function openPetFullProfile(petId) {
+    setActivePet(petId)
+    setPetView('full')
   }
 
   const petSwitcherItems = [
@@ -129,7 +141,7 @@ function App() {
                 role="tab"
                 aria-selected={isActive}
                 className={`pet-chip ${isActive ? 'active' : ''}`}
-                onClick={() => setActivePet(item.id)}
+                onClick={() => (item.kind === 'pet' ? openPetFullProfile(item.id) : setActivePet('casa'))}
               >
                 <span
                   className={`pet-chip-icon ${item.kind === 'pet' ? `tone-${item.pet.tone}` : ''}`}
@@ -159,12 +171,21 @@ function App() {
           supplies={supplies}
           healthRecords={healthRecords}
           baths={baths}
-          weights={weights}
           onAlertClick={setActiveSection}
-          onSelectPet={setActivePet}
+          onSelectPet={openPetSummary}
         />
       )}
-      {activeSection === 'casa' && activePet !== 'casa' && (
+      {activeSection === 'casa' && activePet !== 'casa' && petView === 'resumo' && (
+        <PetSummaryScreen
+          pet={pets.find((pet) => pet.id === activePet)}
+          healthRecords={healthRecords}
+          baths={baths}
+          weights={weights}
+          onBack={() => setActivePet('casa')}
+          onOpenFullProfile={() => setPetView('full')}
+        />
+      )}
+      {activeSection === 'casa' && activePet !== 'casa' && petView === 'full' && (
         <PetProfileScreen
           pet={pets.find((pet) => pet.id === activePet)}
           healthRecords={healthRecords}
